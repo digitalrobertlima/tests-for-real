@@ -2,240 +2,513 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RDESK DESIGN | A Jornada</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RDESK DESIGN × CABANA DE OFÍCIOS | A Jornada Criativa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  
   <style>
     :root {
-      --bg: #09090b;
-      --card-bg: #131316;
-      --accent-copper: #e07a3f;
-      --accent-gold: #d4a373;
-      --text: #f4f4f5;
-      --muted: #a1a1aa;
-      --border: #27272a;
+      --bg-dark: #08080a;
+      --surface-1: #111115;
+      --surface-2: #191920;
+      --surface-glass: rgba(22, 22, 28, 0.75);
+      --accent-copper: #d97736;
+      --accent-bronze: #c57d56;
+      --accent-gold: #e6b87d;
+      --accent-kraft: #b88d67;
+      --text-main: #f4f4f6;
+      --text-muted: #9a9ab0;
+      --border-glow: rgba(217, 119, 54, 0.25);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 8px;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      background-color: var(--bg);
-      color: var(--text);
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
-      min-height: 100vh;
-      padding: 24px 16px 60px;
+      padding: 0;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(217, 119, 54, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(230, 184, 125, 0.06) 0%, transparent 50%);
+      background-attachment: fixed;
     }
 
-    .container {
-      max-width: 520px;
+    /* Container Principal Mobile-First */
+    .app-container {
       width: 100%;
+      max-width: 520px;
+      padding: 28px 20px 80px;
+      position: relative;
     }
 
-    .badge {
+    /* Header & Badge */
+    .header-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      background: rgba(224, 122, 63, 0.1);
-      border: 1px solid var(--accent-copper);
-      color: var(--accent-copper);
-      border-radius: 20px;
-      font-size: 0.75rem;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(217, 119, 54, 0.12);
+      border: 1px solid var(--border-glow);
+      border-radius: 100px;
+      font-size: 0.72rem;
       font-weight: 700;
-      letter-spacing: 1.5px;
+      letter-spacing: 2px;
       text-transform: uppercase;
+      color: var(--accent-gold);
       margin-bottom: 24px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
 
-    h1 {
-      font-size: 2.1rem;
-      line-height: 1.25;
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--accent-copper);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-copper);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.4; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.3); }
+      100% { opacity: 0.4; transform: scale(0.9); }
+    }
+
+    /* Títulos Impactantes */
+    .main-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.3rem;
+      line-height: 1.15;
       font-weight: 800;
+      letter-spacing: -0.5px;
       margin-bottom: 16px;
-      background: linear-gradient(135deg, #fff 0%, var(--accent-gold) 100%);
+      background: linear-gradient(135deg, #ffffff 30%, var(--accent-kraft) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
-    p {
-      color: var(--muted);
-      font-size: 1rem;
+    .subtitle {
+      font-size: 1.05rem;
       line-height: 1.6;
-      margin-bottom: 20px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      font-weight: 400;
     }
 
-    .story-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      margin: 28px 0;
+    /* Cards Estilo Glassmorphism Luxury */
+    .glass-card {
+      background: var(--surface-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      margin-bottom: 28px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
       position: relative;
       overflow: hidden;
+      transition: transform 0.3s ease, border-color 0.3s ease;
     }
 
-    .story-card::before {
-      content: "";
+    .glass-card::before {
+      content: '';
       position: absolute;
-      top: 0; left: 0; width: 4px; height: 100%;
-      background: linear-gradient(to bottom, var(--accent-copper), var(--accent-gold));
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-copper), transparent);
+      opacity: 0.7;
     }
 
-    .story-card h2 {
-      font-size: 1.25rem;
-      color: var(--text);
-      margin-bottom: 12px;
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent-copper);
+      margin-bottom: 10px;
+      display: block;
     }
 
-    .highlight-list {
-      list-style: none;
-      margin: 16px 0;
+    .card-heading {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 14px;
     }
 
-    .highlight-list li {
-      position: relative;
-      padding-left: 24px;
-      margin-bottom: 12px;
-      color: #e4e4e7;
+    /* Sessão Totens & Exposição */
+    .totem-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .totem-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .totem-number {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent-copper), var(--accent-bronze));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      box-shadow: 0 6px 16px rgba(217, 119, 54, 0.3);
+    }
+
+    .totem-info h4 {
       font-size: 0.95rem;
+      color: #fff;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .totem-info p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin: 0;
       line-height: 1.4;
     }
 
-    .highlight-list li::before {
-      content: "✦";
-      position: absolute;
-      left: 0;
-      color: var(--accent-copper);
+    /* Destaque Vânia & Autoria */
+    .artisan-highlight {
+      background: linear-gradient(135deg, rgba(217, 119, 54, 0.08) 0%, rgba(22, 22, 28, 0.6) 100%);
+      border: 1px solid var(--border-glow);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      margin-top: 20px;
     }
 
-    .step-box {
-      background: rgba(255, 255, 255, 0.02);
-      border-left: 2px solid var(--accent-gold);
-      padding: 16px;
-      margin-top: 16px;
-      border-radius: 0 12px 12px 0;
-    }
-
-    .step-box strong {
+    .artisan-highlight strong {
       color: var(--accent-gold);
-      display: block;
+    }
+
+    /* Ecossistema RDESK vs Cabana */
+    .duo-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .duo-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .duo-card h5 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .duo-card.cabana h5 { color: var(--accent-kraft); }
+    .duo-card.rdesk h5 { color: var(--accent-copper); }
+
+    .duo-card p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    /* Roadmap Mentoria / 1.000 Panfletos */
+    .timeline {
+      position: relative;
+      padding-left: 20px;
+      margin-top: 20px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--accent-copper), var(--border-subtle));
+    }
+
+    .timeline-step {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .timeline-step:last-child {
+      margin-bottom: 0;
+    }
+
+    .timeline-step::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 6px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-copper);
+      box-shadow: 0 0 10px var(--accent-copper);
+    }
+
+    .timeline-step h4 {
+      font-size: 1rem;
+      color: #fff;
+      font-weight: 700;
       margin-bottom: 4px;
     }
 
-    /* O Botão Grandioso de WhatsApp */
-    .cta-wrapper {
+    .timeline-step p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* Grandioso Botão WhatsApp */
+    .cta-container {
+      position: relative;
       margin-top: 40px;
       text-align: center;
     }
 
-    .cta-button {
+    .cta-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(37, 211, 102, 0.35) 0%, transparent 70%);
+      filter: blur(25px);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .grand-cta-btn {
+      position: relative;
+      z-index: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
+      gap: 14px;
       width: 100%;
-      padding: 20px 24px;
-      background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+      padding: 22px 28px;
+      background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
       color: #ffffff;
-      font-size: 1.1rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem;
       font-weight: 800;
       text-decoration: none;
-      border-radius: 14px;
-      box-shadow: 0 10px 30px rgba(37, 211, 102, 0.3);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border-radius: var(--radius-md);
+      box-shadow: 
+        0 12px 32px rgba(37, 211, 102, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       letter-spacing: 0.5px;
     }
 
-    .cta-button:active {
-      transform: scale(0.98);
+    .grand-cta-btn:hover, .grand-cta-btn:active {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 18px 40px rgba(37, 211, 102, 0.5);
     }
 
-    .cta-button svg {
-      width: 28px;
-      height: 28px;
+    .grand-cta-btn svg {
+      width: 30px;
+      height: 30px;
       fill: currentColor;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
     }
 
-    .sub-cta {
+    .cta-footer-note {
       font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 12px;
-      text-align: center;
+      color: var(--text-muted);
+      margin-top: 16px;
+      display: block;
+    }
+
+    .author-footer {
+      margin-top: 50px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .author-footer strong {
+      color: var(--text-main);
     }
   </style>
 </head>
 <body>
-  <div class="container">
+
+  <div class="app-container">
     
-    <div class="badge">RDESK DESIGN • SELEÇÃO E MENTORIA</div>
-    
-    <h1>Você encontrou o coelho. Agora entenda o que está por trás.</h1>
-    
-    <p>
-      Se você está aqui, é porque a curiosidade te trouxe até a nossa presença física. E o que você viu no estande não foi um acaso: foi a expressão pura do nosso compromisso com o fazer real.
+    <!-- Header Badge -->
+    <div class="header-badge">
+      <span class="badge-dot"></span>
+      <span>UEMG • EXPOSIÇÃO EXCLUSIVA</span>
+    </div>
+
+    <!-- Título Principal -->
+    <h1 class="main-title">Você encontrou o Coelho. Decodificou a entrada.</h1>
+    <p class="subtitle">
+      O QR Code te trouxe até aqui porque você tem o olhar curioso de quem enxerga além da superfície. O que você acabou de ver no estande é a prova viva de que o design não tem limites.
     </p>
 
-    <div class="story-card">
-      <h2>A Cabana de Ofícios é Sem Limites</h2>
-      <p>
-        Olhe para a exposição. Você viu os 3 totens que sustentam joias artesanais únicas — os dois colares e, no terceiro totem, as duas pulseiras integradas.
+    <!-- Card 1: A Exposição dos Totens e Joias -->
+    <div class="glass-card">
+      <span class="card-label">Curadoria & Feito à Mão</span>
+      <h2 class="card-heading">A Alma da Cabana de Ofícios</h2>
+      <p style="font-size: 0.92rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+        Na nossa exposição, três pedestais revelam a união entre a forma arquitetônica e a sensibilidade do artesanato de luxo:
       </p>
-      <ul class="highlight-list">
-        <li><strong>Cada totem foi feito à mão pela Vânia Prado</strong>, do corte ao acabamento tátil.</li>
-        <li><strong>Cada joia expressa a sensibilidade</strong> de transformar matéria bruta em valor visual.</li>
-        <li><strong>A Cabana de Ofícios prova</strong> que o design não possui barreiras quando há conceito, técnica e coragem.</li>
-      </ul>
+
+      <div class="totem-grid">
+        <div class="totem-item">
+          <div class="totem-number">01</div>
+          <div class="totem-info">
+            <h4>Totem I • Colar Artesanal</h4>
+            <p>Escultura vestível com linguagem orgânica e autoral.</p>
+          </div>
+        </div>
+
+        <div class="totem-item">
+          <div class="totem-number">02</div>
+          <div class="totem-info">
+            <h4>Totem II • Colar de Presença</h4>
+            <p>Trabalho de textura e contraste de materiais nobres.</p>
+          </div>
+        </div>
+
+        <div class="totem-item">
+          <div class="totem-number">03</div>
+          <div class="totem-info">
+            <h4>Totem III • Dupla de Pulseiras</h4>
+            <p>Duas peças entrelaçadas em perfeita harmonia tátil.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="artisan-highlight">
+        <p style="font-size: 0.88rem; color: var(--text-main); margin: 0; line-height: 1.5;">
+          🔨 <strong>Autoria Brutal:</strong> Até os próprios totens foram esculpidos e construídos manualmente pela <strong>Vânia Prado</strong>. A Cabana de Ofícios é o nosso manifesto sem barreiras.
+        </p>
+      </div>
     </div>
 
-    <p>
-      A <strong>Cabana de Ofícios</strong> é a nossa essência e o nosso laboratório vivo. A <strong>RDESK DESIGN</strong> é a empresa estratégica que pega esse rigor criativo e o transforma em autoridade, mercado e retorno financeiro.
-    </p>
+    <!-- Card 2: A Ponte RDESK DESIGN -->
+    <div class="glass-card">
+      <span class="card-label">Estrutura & Negócio</span>
+      <h2 class="card-heading">O Ecossistema RDESK DESIGN</h2>
+      <p style="font-size: 0.92rem; color: var(--text-muted); line-height: 1.5;">
+        A <strong>Cabana de Ofícios</strong> é o nosso ateliê criativo sem limites. A <strong>RDESK DESIGN</strong> é a empresa estratégica que transforma essa força poética em posicionamento, escala e retorno comercial.
+      </p>
 
-    <div class="story-card">
-      <h2>Sua Jornada de Formação na RDESK</h2>
-      <p>Nós não contratamos pessoas para preencher formulários ou fazer tarefas mecânicas. Nós formamos estrategistas completos.</p>
+      <div class="duo-box">
+        <div class="duo-card cabana">
+          <h5>Cabana de Ofícios</h5>
+          <p>Exploração tátil, poética visual, artesanato e sem limites de criação.</p>
+        </div>
+        <div class="duo-card rdesk">
+          <h5>RDESK DESIGN</h5>
+          <p>Estratégia comercial, inteligência espacial, branding e escala de negócios.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: A Mentoria dos 1.000 Panfletos -->
+    <div class="glass-card">
+      <span class="card-label">Formação & Desafio Prático</span>
+      <h2 class="card-heading">Sua Jornada de Entrada</h2>
+      <p style="font-size: 0.92rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+        Na RDESK, não contratamos pessoas para tarefas mecânicas. Nós formamos estrategistas completos através da prática direta no mercado:
+      </p>
+
+      <div class="timeline">
+        <div class="timeline-step">
+          <h4>01. Projeto 1.000 Panfletos Estratégicos</h4>
+          <p>Você vai aprender a desenhar uma peça gráfica impressa de altíssima conversão. Acompanhamento passo a passo comigo (Robert Macedo) no processo de design e inteligência visual.</p>
+        </div>
+
+        <div class="timeline-step">
+          <h4>02. Conquista dos Primeiros Clientes</h4>
+          <p>Não paramos na tela do computador. Vamos juntos validar o seu material no mercado e garantir que você conquiste seus primeiros clientes reais pagantes.</p>
+        </div>
+
+        <div class="timeline-step">
+          <h4>03. Integração ao time RDESK</h4>
+          <p>Com os primeiros resultados no bolso, você passa a integrar nossos projetos de branding, design de ambientes e estratégias comerciais.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grandioso Botão de Conversão WhatsApp -->
+    <div class="cta-container">
+      <div class="cta-glow"></div>
       
-      <div class="step-box">
-        <strong>Seu Primeiro Produto Real: 1.000 Panfletos</strong>
-        <p style="margin:0; font-size: 0.9rem;">
-          Você aprenderá a construir a arquitetura visual e comercial de 1.000 panfletos. Eu (Robert) vou acompanhar o seu processo de criação passo a passo, ensinando a alinhar estética e conversão.
-        </p>
-      </div>
-
-      <div class="step-box">
-        <strong>Resultado Prático Garantido</strong>
-        <p style="margin:0; font-size: 0.9rem;">
-          Não paramos na arte digital. Nós vamos juntos para o mercado e garantiremos os seus primeiros clientes, ensinando você a vender e posicionar seu próprio trabalho.
-        </p>
-      </div>
-    </div>
-
-    <p style="text-align: center; color: #fff; font-weight: 600;">
-      Pronto para sair da teoria e construir algo extraordinário com a gente?
-    </p>
-
-    <!-- Botão de WhatsApp Compilado -->
-    <div class="cta-wrapper">
       <a 
-        href="https://wa.me/5531982313684?text=Ol%C3%A1%20Robert!%20Vi%20os%20totens%20da%20V%C3%A2nia%20e%20as%20joias%20na%20Cabana%20de%20Of%C3%ADcios.%20Quero%20iniciar%20minha%20jornada%20na%20RDESK%20DESIGN%20e%20aprender%20o%20projeto%20dos%201.000%20panfletos!" 
-        class="cta-button"
+        href="https://wa.me/5531982313684?text=Ol%C3%A1%20Robert!%20Acabei%20de%20ver%20os%20totens%20da%20V%C3%A2nia%20e%20as%20joias%20na%20exposi%C3%A7%C3%A3o%20da%20UEMG.%20Aceito%20o%20desafio%20dos%201.000%20panfletos%20e%20quero%20iniciar%20minha%20jornada%20na%20RDESK%20DESIGN!" 
+        class="grand-cta-btn"
         target="_blank"
       >
         <svg viewBox="0 0 24 24">
           <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
         </svg>
-        INICIAR MINHA JORNADA
+        INICIAR MINHA JORNADA AGORA
       </a>
-      <div class="sub-cta">
-        Fale diretamente com o Robert Macedo no WhatsApp • Resposta Rápida
-      </div>
+
+      <span class="cta-footer-note">
+        ⚡ Clique acima para falar diretamente com <strong>Robert Macedo</strong> no WhatsApp
+      </span>
+    </div>
+
+    <!-- Rodapé de Autoria -->
+    <div class="author-footer">
+      <span>RDESK DESIGN © 2026</span>
+      <span>Por <strong>Robert Lima</strong> & <strong>Vânia Prado</strong></span>
     </div>
 
   </div>
+
 </body>
 </html>
