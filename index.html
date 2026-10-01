@@ -3,497 +3,203 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RDESK DESIGN × Cabana de Ofícios</title>
+  <title>Quantum Core 3D - Three.js</title>
   <style>
-    :root {
-      --bg: #0A0A0C;
-      --card-bg: rgba(22, 22, 26, 0.75);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --copper: #E07A3F;
-      --gold: #D4A373;
-      --gold-glow: rgba(212, 163, 115, 0.25);
-      --text-main: #F4F4F5;
-      --text-muted: #A1A1AA;
-      --whatsapp: #25D366;
-    }
-
     * {
       box-sizing: border-box;
+    }
+    body, html {
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    body {
-      background-color: var(--bg);
-      background-image: 
-        radial-gradient(circle at 50% 0%, rgba(224, 122, 63, 0.12) 0%, transparent 60%),
-        radial-gradient(circle at 80% 80%, rgba(212, 163, 115, 0.06) 0%, transparent 50%);
-      color: var(--text-main);
-      display: flex;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px 16px 80px;
-    }
-
-    .wrapper {
-      max-width: 460px;
       width: 100%;
-    }
-
-    /* HEADER / BADGE */
-    .brand-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--card-border);
-    }
-
-    .brand-title {
-      font-weight: 900;
-      font-size: 0.85rem;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--copper);
-    }
-
-    .brand-sub {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    /* HERO BLOCK */
-    .hero {
-      text-align: left;
-      margin-bottom: 28px;
-    }
-
-    .hero-tag {
-      display: inline-block;
-      background: linear-gradient(90deg, rgba(224,122,63,0.2), rgba(212,163,115,0.1));
-      border: 1px solid rgba(224,122,63,0.4);
-      color: var(--copper);
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      padding: 6px 12px;
-      border-radius: 30px;
-      margin-bottom: 14px;
-    }
-
-    .hero h1 {
-      font-size: 2.2rem;
-      line-height: 1.15;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      margin-bottom: 12px;
-      background: linear-gradient(135deg, #FFFFFF 30%, var(--gold) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .hero p {
-      font-size: 0.98rem;
-      line-height: 1.5;
-      color: var(--text-muted);
-    }
-
-    .hero p strong {
-      color: var(--text-main);
-    }
-
-    /* EXPOSURE CARDS (3 TOTEMS) */
-    .section-label {
-      font-size: 0.75rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: var(--gold);
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .section-label::after {
-      content: "";
-      flex: 1;
-      height: 1px;
-      background: var(--card-border);
-    }
-
-    .totems-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-bottom: 24px;
-    }
-
-    .totem-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 14px 10px;
-      text-align: center;
-      backdrop-filter: blur(10px);
-      position: relative;
+      height: 100%;
       overflow: hidden;
-      transition: transform 0.2s ease, border-color 0.2s ease;
+      background-color: #08090c;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
-
-    .totem-card:hover {
-      border-color: rgba(224, 122, 63, 0.4);
-      transform: translateY(-2px);
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
     }
-
-    .totem-icon {
-      font-size: 1.6rem;
-      margin-bottom: 6px;
-      display: block;
+    .ui-overlay {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      color: #00f3ff;
+      font-family: 'Courier New', Courier, monospace;
+      pointer-events: none;
+      z-index: 10;
+      text-shadow: 0 0 12px rgba(0, 243, 255, 0.4);
     }
-
-    .totem-num {
-      font-size: 0.65rem;
-      font-weight: 800;
-      color: var(--copper);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .totem-title {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--text-main);
-      margin: 2px 0 4px;
-    }
-
-    .totem-desc {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      line-height: 1.2;
-    }
-
-    .credit-banner {
-      background: rgba(224, 122, 63, 0.08);
-      border: 1px dashed rgba(224, 122, 63, 0.3);
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-size: 0.82rem;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 28px;
-    }
-
-    .credit-banner span {
-      font-size: 1.3rem;
-    }
-
-    /* CONCEPT vs BUSINESS DUALITY */
-    .duality-box {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 28px;
-      backdrop-filter: blur(10px);
-    }
-
-    .duality-item {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-    }
-
-    .duality-item:first-child {
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--card-border);
-      margin-bottom: 16px;
-    }
-
-    .duality-badge {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .ui-overlay h1 {
+      margin: 0 0 6px 0;
       font-size: 1.1rem;
-      flex-shrink: 0;
-    }
-
-    .duality-badge.cabana {
-      background: rgba(212, 163, 115, 0.15);
-      color: var(--gold);
-      border: 1px solid rgba(212, 163, 115, 0.3);
-    }
-
-    .duality-badge.rdesk {
-      background: rgba(224, 122, 63, 0.15);
-      color: var(--copper);
-      border: 1px solid rgba(224, 122, 63, 0.3);
-    }
-
-    .duality-text h3 {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-main);
-      margin-bottom: 2px;
-    }
-
-    .duality-text p {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    /* MENTORSHIP JOURNEY (THE OFFER) */
-    .journey-card {
-      background: linear-gradient(145deg, rgba(224,122,63,0.12) 0%, rgba(20,20,25,0.9) 100%);
-      border: 1px solid rgba(224, 122, 63, 0.3);
-      border-radius: 18px;
-      padding: 22px;
-      margin-bottom: 32px;
-      position: relative;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-
-    .journey-card h2 {
-      font-size: 1.25rem;
-      font-weight: 800;
-      color: #FFF;
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .step-list {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .step-item {
-      display: flex;
-      gap: 12px;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .step-num {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--copper);
-      color: #fff;
-      font-weight: 800;
-      font-size: 0.85rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .step-info h4 {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: #FFF;
-      margin-bottom: 2px;
-    }
-
-    .step-info p {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      line-height: 1.35;
-    }
-
-    /* GRAND CTA BUTTON */
-    .cta-container {
-      text-align: center;
-    }
-
-    .cta-heading {
-      font-size: 1.05rem;
-      font-weight: 800;
-      color: #FFF;
-      margin-bottom: 16px;
-      line-height: 1.3;
-    }
-
-    .btn-whatsapp {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      width: 100%;
-      padding: 22px 20px;
-      background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
-      color: #FFFFFF;
-      font-size: 1.05rem;
-      font-weight: 900;
-      text-decoration: none;
-      border-radius: 16px;
-      letter-spacing: 0.5px;
+      letter-spacing: 3px;
       text-transform: uppercase;
-      box-shadow: 
-        0 12px 32px rgba(37, 211, 102, 0.35),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-      animation: pulse 2s infinite;
-      transition: transform 0.2s ease;
+      font-weight: 700;
     }
-
-    .btn-whatsapp:active {
-      transform: scale(0.97);
-    }
-
-    .btn-whatsapp svg {
-      width: 26px;
-      height: 26px;
-      fill: currentColor;
-    }
-
-    .cta-subtext {
+    .ui-overlay p {
+      margin: 0;
       font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 12px;
-    }
-
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5); }
-      70% { box-shadow: 0 0 0 16px rgba(37, 211, 102, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+      color: #8a99ad;
+      letter-spacing: 1px;
     }
   </style>
 </head>
 <body>
-
-  <div class="wrapper">
-    
-    <!-- HEADER -->
-    <header class="brand-header">
-      <div class="brand-title">CABANA DE OFÍCIOS</div>
-      <div class="brand-sub">Escola de Design UEMG</div>
-    </header>
-
-    <!-- HERO SECTION -->
-    <section class="hero">
-      <span class="hero-tag">Encontro Físico × Futuro Profissional</span>
-      <h1>Viu o coelho?<br>Entenda o que está exposto aqui!</h1>
-      <p>Você não encontrou um estande comum. Você encontrou a fusão entre o <strong>fazer artesanal sem limites</strong> e a <strong>estratégia comercial de alto nível</strong>.</p>
-    </section>
-
-    <!-- SECTION 1: OS 3 TOTENS DA VÂNIA -->
-    <div class="section-label">O que você está vendo agora no estande</div>
-
-    <div class="totems-grid">
-      <div class="totem-card">
-        <span class="totem-icon">📿</span>
-        <div class="totem-num">Totem 01</div>
-        <div class="totem-title">Colar Artesanal</div>
-        <div class="totem-desc">Design tátil & autoral</div>
-      </div>
-
-      <div class="totem-card">
-        <span class="totem-icon">📿</span>
-        <div class="totem-num">Totem 02</div>
-        <div class="totem-title">Colar Artesanal em couríno</div>
-        <div class="totem-desc">Conceito e textura</div>
-      </div>
-
-      <div class="totem-card">
-        <span class="totem-icon">✨</span>
-        <div class="totem-num">Totem 03</div>
-        <div class="totem-title">2 Pulseiras artesanais</div>
-        <div class="totem-desc">Exposição dupla</div>
-      </div>
-    </div>
-
-    <div class="credit-banner">
-      <span>🔨</span>
-      <div>
-        <strong>Cada totem foi feito à mão pela designer Vânia Hypolito.</strong><br>
-        Isso prova que na <em>Cabana de Ofícios</em> o design não tem barreiras.
-      </div>
-    </div>
-
-    <!-- SECTION 2: DUALIDADE CONCEITO VS EMPRESA -->
-    <div class="duality-box">
-      <div class="duality-item">
-        <div class="duality-badge cabana">🏛️</div>
-        <div class="duality-text">
-          <h3>Cabana de Ofícios (O Foco Aqui)</h3>
-          <p>Nossa alma criativa. O espaço onde o artesanal, a matéria-prima e a cultura ganham forma sem freios.</p>
-        </div>
-      </div>
-
-      <div class="duality-item">
-        <div class="duality-badge rdesk">🚀</div>
-        <div class="duality-text">
-          <h3>RDESK DESIGN (A Empresa)</h3>
-          <p>O ecossistema estratégico que pega essa energia criativa e transforma em autoridade, mercado e clientes reais.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- SECTION 3: A MENTORIA / CONVITE -->
-    <section class="journey-card">
-      <h2>🔥 O Convite: Sua Jornada na RDESK</h2>
-      <p style="font-size: 0.85rem; color: #E4E4E7; margin-bottom: 16px; line-height: 1.4;">
-        Não queremos pessoas para preencher vagas genéricas. Queremos criar novos talentos na prática, lado a lado.
-      </p>
-
-      <div class="step-list">
-        <div class="step-item">
-          <div class="step-num">1</div>
-          <div class="step-info">
-            <h4>Seu 1º Projeto: 1.000 Panfletos</h4>
-            <p>Vou acompanhar você pessoalmente na criação da arte, alinhando estética, impressão e estratégia</p>
-          </div>
-        </div>
-
-        <div class="step-item">
-          <div class="step-num">2</div>
-          <div class="step-info">
-            <h4>Garantia dos Primeiros Clientes</h4>
-            <p>Não paramos no arquivo digital. Nós vamos juntos para o mercado e fecharemos seus primeiros clientes reais</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 4: GRAND CTA -->
-    <div class="cta-container">
-      <div class="cta-heading">
-        Pronto para criar sem limites e fechar seus primeiros clientes?
-      </div>
-
-      <a 
-        href="https://wa.me/5531982313684?text=Ol%C3%A1%20Robert!%20Vi%20o%20coelho%20e%20os%203%20totens%20da%20V%C3%A2nia%20na%20Cabana%20de%20Of%C3%ADcios.%20Quero%20iniciar%20minha%20jornada%20na%20RDESK%20DESIGN%2C%20criar%20meus%201.000%20panfletos%20e%20fechar%20meus%20primeiros%20clientes!" 
-        class="btn-whatsapp"
-        target="_blank"
-      >
-        <svg viewBox="0 0 24 24">
-          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
-        </svg>
-        INICIAR JORNADA DIRETO NO WHATSAPP
-      </a>
-
-      <div class="cta-subtext">
-        Conversa direta com Robert Macedo • (31) 98231-3684
-      </div>
-    </div>
-
+  <div class="ui-overlay">
+    <h1>[ QUANTUM_CORE // v1.0 ]</h1>
+    <p>ARRASTE PARA ROTACIONAR • SCROLL PARA ZOOM</p>
   </div>
+  <div id="canvas-container"></div>
 
+  <!-- Three.js + OrbitControls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    const container = document.getElementById('canvas-container');
+
+    // 1. CENA E CÂMERA
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x08090c, 0.012);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 36);
+
+    // 2. RENDERER
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
+    container.appendChild(renderer.domElement);
+
+    // 3. CONTROLES DE ÓRBITA
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxDistance = 70;
+    controls.minDistance = 12;
+
+    // 4. ILUMINAÇÃO DINÂMICA (Neon & Ambient)
+    const ambientLight = new THREE.AmbientLight(0x0a0d14, 2.0);
+    scene.add(ambientLight);
+
+    const lightCyan = new THREE.PointLight(0x00f3ff, 4, 60);
+    const lightMagenta = new THREE.PointLight(0xff0055, 4, 60);
+    const lightViolet = new THREE.PointLight(0x7000ff, 3, 60);
+
+    scene.add(lightCyan, lightMagenta, lightViolet);
+
+    // 5. GEOMETRIA PRINCIPAL (Torus Knot Escultórico)
+    const geometry = new THREE.TorusKnotGeometry(7, 2.2, 180, 32);
+
+    // Core sólido metálico refletivo
+    const coreMaterial = new THREE.MeshStandardMaterial({
+      color: 0x0f1117,
+      roughness: 0.12,
+      metalness: 0.95,
+      wireframe: false
+    });
+
+    const coreMesh = new THREE.Mesh(geometry, coreMaterial);
+    scene.add(coreMesh);
+
+    // Camada exterior wireframe pulsante
+    const wireMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00f3ff,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.18
+    });
+
+    const wireMesh = new THREE.Mesh(geometry, wireMaterial);
+    wireMesh.scale.set(1.035, 1.035, 1.035);
+    scene.add(wireMesh);
+
+    // 6. CAMPO DE PARTÍCULAS ORBITAL
+    const particlesCount = 3000;
+    const positions = new Float32Array(particlesCount * 3);
+    const colors = new Float32Array(particlesCount * 3);
+
+    const c1 = new THREE.Color(0x00f3ff);
+    const c2 = new THREE.Color(0xff0055);
+
+    for (let i = 0; i < particlesCount * 3; i += 3) {
+      const radius = 14 + Math.random() * 22;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+
+      positions[i] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      positions[i + 2] = radius * Math.cos(phi);
+
+      const mixedColor = c1.clone().lerp(c2, Math.random());
+      colors[i] = mixedColor.r;
+      colors[i + 1] = mixedColor.g;
+      colors[i + 2] = mixedColor.b;
+    }
+
+    const particlesGeometry = new THREE.BufferGeometry();
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const particlesMaterial = new THREE.PointsMaterial({
+      size: 0.18,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.75,
+      blending: THREE.AdditiveBlending
+    });
+
+    const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particleSystem);
+
+    // 7. LOOP DE ANIMAÇÃO
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const t = clock.getElapsedTime();
+
+      // Rotações combinadas do objeto central
+      coreMesh.rotation.x = t * 0.15;
+      coreMesh.rotation.y = t * 0.25;
+
+      wireMesh.rotation.x = t * 0.15;
+      wireMesh.rotation.y = t * 0.25;
+
+      // Rotação sutil do campo de poeira
+      particleSystem.rotation.y = t * 0.04;
+      particleSystem.rotation.x = t * 0.02;
+
+      // Órbitas tridimensionais das luzes coloridas
+      lightCyan.position.x = Math.sin(t * 0.6) * 22;
+      lightCyan.position.y = Math.cos(t * 0.4) * 22;
+      lightCyan.position.z = Math.cos(t * 0.5) * 22;
+
+      lightMagenta.position.x = Math.cos(t * 0.4) * 24;
+      lightMagenta.position.y = Math.sin(t * 0.7) * 24;
+      lightMagenta.position.z = Math.sin(t * 0.3) * 24;
+
+      lightViolet.position.x = Math.sin(t * 0.3) * 20;
+      lightViolet.position.y = Math.cos(t * 0.8) * 20;
+      lightViolet.position.z = Math.sin(t * 0.6) * 20;
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    // 8. REDIMENSIONAMENTO RESPONSIVO
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+  </script>
 </body>
 </html>
