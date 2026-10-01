@@ -1,802 +1,493 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>V8 Quad-Cam Engine - 3D CAD Simulator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor 3D | Inspeção CAD Avançada</title>
+    <style>
+        :root {
+            --midnight-carbon: #0F1115;
+            --neon-cyan: #00E5FF;
+            --glass-bg: rgba(15, 17, 21, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #E2E8F0;
+            --text-muted: #64748B;
+        }
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--midnight-carbon);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-main);
+        }
 
-  <style>
-    /* Fixed viewport and z-index hierarchy to prevent black screen overlay issues */
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #080a0f;
-      font-family: 'Inter', -apple-system, sans-serif;
-      touch-action: none;
-    }
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
 
-    #canvas-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 0;
-      background: #080a0f;
-    }
+        /* UI Overlays com estilo Smoked Glass */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
 
-    .ui-layer {
-      position: relative;
-      z-index: 10;
-      pointer-events: none;
-    }
+        #ui-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px;
+        }
 
-    .interactive-ui {
-      pointer-events: auto !important;
-    }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
 
-    /* Glassmorphism panel style */
-    .glass-panel {
-      background: rgba(15, 19, 28, 0.88);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(0, 243, 255, 0.2);
-    }
+        .title-box {
+            padding: 16px 24px;
+            max-width: 400px;
+        }
 
-    /* Custom range sliders */
-    input[type=range] {
-      -webkit-appearance: none;
-      background: #182030;
-      border-radius: 4px;
-      height: 6px;
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      height: 18px;
-      width: 18px;
-      border-radius: 50%;
-      background: #00f3ff;
-      cursor: pointer;
-      box-shadow: 0 0 12px rgba(0, 243, 255, 0.8);
-    }
+        .title-box h1 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--neon-cyan);
+        }
 
-    /* Scrollbars */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: #080a0f; }
-    ::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 2px; }
-  </style>
+        .title-box p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Painel de Inspeção Lateral */
+        .inspector-panel {
+            position: absolute;
+            right: 24px;
+            top: 24px;
+            width: 280px;
+            padding: 20px;
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .inspector-panel.active {
+            transform: translateX(0);
+        }
+
+        .inspector-panel h2 {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 0;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 8px;
+        }
+
+        .part-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            margin: 12px 0;
+            word-wrap: break-word;
+        }
+
+        .specs-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 12px;
+        }
+
+        .specs-list li {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        .specs-list span {
+            color: var(--neon-cyan);
+            font-family: monospace;
+        }
+
+        /* Controles Inferiores */
+        .controls-container {
+            align-self: center;
+            width: 100%;
+            max-width: 600px;
+            padding: 20px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .control-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            width: 140px;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            background: transparent;
+            height: 4px;
+            border-radius: 2px;
+            background: #2A2F3A;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover, .btn.active {
+            background: var(--neon-cyan);
+            color: var(--midnight-carbon);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+        }
+
+        /* Loading Screen */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: var(--midnight-carbon);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(0, 229, 255, 0.2);
+            border-top-color: var(--neon-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        #loading-text {
+            font-size: 12px;
+            letter-spacing: 2px;
+            color: var(--neon-cyan);
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 </head>
-<body class="select-none text-slate-200">
+<body>
 
-  <!-- 3D WebGL Canvas Layer -->
-  <div id="canvas-container"></div>
-
-  <!-- UI Overlay Layer -->
-  <div class="ui-layer w-full h-full flex flex-col justify-between p-3 sm:p-5">
-
-    <!-- HEADER -->
-    <header class="flex justify-between items-start gap-4">
-      <div class="glass-panel rounded-xl p-3 sm:p-4 border-l-4 border-l-[#00f3ff] interactive-ui flex items-center gap-3">
-        <div class="bg-[#00f3ff]/10 p-2 rounded-lg border border-[#00f3ff]/30 text-[#00f3ff]">
-          <i data-lucide="cpu" class="w-5 h-5 sm:w-6 sm:h-6"></i>
-        </div>
-        <div>
-          <h1 class="font-mono text-xs sm:text-sm font-bold text-white tracking-wider flex items-center gap-2">
-            V8 QUAD-CAM <span class="text-[#00f3ff] text-[10px] bg-[#00f3ff]/10 px-1.5 py-0.5 rounded border border-[#00f3ff]/30">4.0L HIGH-OUTPUT</span>
-          </h1>
-          <p class="text-[10px] sm:text-xs text-slate-400 font-mono">SIMULADOR CAD 3D • CINEMÁTICA MECÂNICA</p>
-        </div>
-      </div>
-
-      <!-- TELEMETRY BADGES -->
-      <div class="glass-panel rounded-xl px-3 py-2 interactive-ui hidden sm:flex items-center gap-4 font-mono text-xs">
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span class="text-slate-400">STATUS:</span>
-          <span id="telemetry-status" class="text-emerald-400 font-semibold">EM OPERAÇÃO</span>
-        </div>
-        <div class="h-4 w-[1px] bg-slate-800"></div>
-        <div>
-          <span class="text-slate-400">ROTAÇÃO:</span>
-          <span id="telemetry-rpm" class="text-[#00f3ff] font-bold">1200 RPM</span>
-        </div>
-        <div class="h-4 w-[1px] bg-slate-800"></div>
-        <div>
-          <span class="text-slate-400">FPS:</span>
-          <span id="telemetry-fps" class="text-amber-400 font-bold">60</span>
-        </div>
-      </div>
-    </header>
-
-    <!-- MIDDLE SECTION: SIDEBAR & TECHNICAL HUD CARD -->
-    <div class="flex justify-between items-start my-auto pointer-events-none">
-      
-      <!-- CAMERA PRESETS SIDEBAR -->
-      <aside class="glass-panel p-2 rounded-xl flex flex-col gap-1.5 interactive-ui shadow-2xl">
-        <div class="text-[9px] font-mono text-slate-400 px-1.5 py-0.5 uppercase tracking-wider">Câmera</div>
-        <button onclick="setCameraView('iso')" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-mono bg-slate-800/80 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] text-slate-300 border border-slate-700/60 transition">
-          <i data-lucide="box" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Isométrica</span>
-        </button>
-        <button onclick="setCameraView('front')" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-mono bg-slate-800/80 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] text-slate-300 border border-slate-700/60 transition">
-          <i data-lucide="arrow-right-left" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Frente</span>
-        </button>
-        <button onclick="setCameraView('side')" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-mono bg-slate-800/80 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] text-slate-300 border border-slate-700/60 transition">
-          <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Lateral</span>
-        </button>
-        <button onclick="setCameraView('top')" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-mono bg-slate-800/80 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] text-slate-300 border border-slate-700/60 transition">
-          <i data-lucide="arrow-down" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Superior</span>
-        </button>
-      </aside>
-
-      <!-- TECHNICAL HUD SIDE PANEL -->
-      <aside id="tech-card" class="w-72 sm:w-80 glass-panel rounded-2xl p-4 interactive-ui transition-all duration-300 translate-x-[120%] opacity-0 shadow-2xl border border-[#00f3ff]/30">
-        <div class="flex justify-between items-start border-b border-slate-800 pb-2 mb-3">
-          <div>
-            <span id="part-category" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#00f3ff]/10 text-[#00f3ff] border border-[#00f3ff]/30 uppercase">SISTEMA MECÂNICO</span>
-            <h2 id="part-name" class="text-sm font-bold text-white mt-1">Nome do Componente</h2>
-          </div>
-          <button onclick="closeTechCard()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
-            <i data-lucide="x" class="w-4 h-4"></i>
-          </button>
-        </div>
-
-        <p id="part-desc" class="text-xs text-slate-300 leading-relaxed mb-3">
-          Clique em qualquer componente para examinar a engenharia e tolerâncias de fabricação.
-        </p>
-
-        <div class="space-y-2 font-mono text-[11px]">
-          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex justify-between">
-            <span class="text-slate-400">Material Base:</span>
-            <span id="part-material" class="text-slate-200 font-semibold">-</span>
-          </div>
-          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex justify-between">
-            <span class="text-slate-400">Liga Específica:</span>
-            <span id="part-alloy" class="text-[#00f3ff] font-semibold">-</span>
-          </div>
-          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex justify-between">
-            <span class="text-slate-400">Tolerância:</span>
-            <span id="part-tolerance" class="text-amber-400 font-semibold">-</span>
-          </div>
-          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex justify-between">
-            <span class="text-slate-400">Temp. Operação:</span>
-            <span id="part-temp" class="text-rose-400 font-semibold">-</span>
-          </div>
-        </div>
-      </aside>
+    <!-- Loading Screen -->
+    <div id="loader">
+        <div class="spinner"></div>
+        <div id="loading-text">INICIALIZANDO MOTOR 3D...</div>
     </div>
 
-    <!-- FOOTER DASHBOARD -->
-    <footer class="glass-panel rounded-2xl p-3 sm:p-4 w-full max-w-4xl mx-auto interactive-ui shadow-2xl flex flex-wrap items-center justify-between gap-3">
-      
-      <!-- ENGINE PLAY / RPM -->
-      <div class="flex items-center gap-3">
-        <button id="btn-play" onclick="toggleEnginePlay()" class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00f3ff] to-blue-600 text-slate-950 flex items-center justify-center hover:brightness-110 transition shadow-lg shadow-[#00f3ff]/20">
-          <i id="icon-play" data-lucide="pause" class="w-5 h-5 fill-current"></i>
-        </button>
-        <div>
-          <div class="text-[9px] font-mono text-slate-400 uppercase">Rotação RPM</div>
-          <div class="flex items-center gap-2">
-            <input type="range" id="slider-rpm" min="0" max="6000" step="50" value="1200" class="w-24 sm:w-32">
-            <span id="val-rpm" class="font-mono text-xs font-bold text-[#00f3ff]">1200</span>
-          </div>
+    <!-- UI Overlay -->
+    <div id="ui-layer">
+        <div class="header">
+            <div class="glass-panel title-box">
+                <h1>2-Cylinder Engine</h1>
+                <p>Modelo Importado (.glb) • Iluminação HDRI PBR • Cinemática e Vista Explodida Calculada em Tempo Real.</p>
+            </div>
+            
+            <div class="glass-panel inspector-panel" id="inspector">
+                <h2>Inspeção de Peça</h2>
+                <div class="part-name" id="part-name">Nenhuma Selecionada</div>
+                <ul class="specs-list">
+                    <li>Material: <span id="part-mat">---</span></li>
+                    <li>Geometria: <span id="part-vert">---</span></li>
+                    <li>Tensão Operacional: <span>12V DC</span></li>
+                    <li>Status: <span>OK</span></li>
+                </ul>
+            </div>
         </div>
-      </div>
 
-      <div class="h-6 w-[1px] bg-slate-800 hidden sm:block"></div>
-
-      <!-- EXPLODED VIEW SLIDER -->
-      <div class="flex items-center gap-3">
-        <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700 text-slate-300">
-          <i data-lucide="layers" class="w-4 h-4"></i>
+        <div class="glass-panel controls-container">
+            <div class="control-group">
+                <span class="control-label">Vista Explodida</span>
+                <input type="range" id="explode-slider" min="0" max="2" step="0.01" value="0">
+            </div>
+            <div class="control-group" style="justify-content: flex-start; gap: 12px;">
+                <button class="btn" id="btn-xray">Modo Raio-X</button>
+                <button class="btn" id="btn-spin">Auto-Rotação</button>
+            </div>
         </div>
-        <div>
-          <div class="text-[9px] font-mono text-slate-400 uppercase">Vista Explodida</div>
-          <div class="flex items-center gap-2">
-            <input type="range" id="slider-explode" min="0" max="100" value="0" class="w-24 sm:w-36">
-            <span id="val-explode" class="font-mono text-xs font-bold text-amber-400">0%</span>
-          </div>
-        </div>
-      </div>
+    </div>
 
-      <div class="h-6 w-[1px] bg-slate-800 hidden md:block"></div>
+    <div id="canvas-container"></div>
 
-      <!-- VISUAL MODE TOGGLES -->
-      <div class="flex items-center gap-2">
-        <button id="btn-xray" onclick="toggleXRayMode()" class="px-2.5 py-1.5 rounded-xl text-xs font-mono bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
-          <i data-lucide="box" class="w-3.5 h-3.5 text-[#00f3ff]"></i> Raio-X
-        </button>
+    <!-- Bibliotecas Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
 
-        <button id="btn-wireframe" onclick="toggleWireframe()" class="px-2.5 py-1.5 rounded-xl text-xs font-mono bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
-          <i data-lucide="grid" class="w-3.5 h-3.5 text-emerald-400"></i> Malha
-        </button>
+    <script>
+        // 1. CONFIGURAÇÃO BASE
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x0F1115, 0.002);
 
-        <button onclick="resetCamera()" class="p-1.5 rounded-xl text-xs font-mono bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Resetar Visão">
-          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-        </button>
-      </div>
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
 
-    </footer>
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 300;
 
-  </div>
+        // 2. ILUMINAÇÃO & AMBIENTE HDRI
+        // Carregando HDRI para reflexos realistas de metal
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileEquirectangularShader();
 
-  <!-- HOVER TOOLTIP -->
-  <div id="hover-tooltip" class="fixed pointer-events-none z-30 opacity-0 transition-opacity duration-150 glass-panel px-2.5 py-1 rounded-lg border border-[#00f3ff]/40 text-xs font-mono text-[#00f3ff] shadow-xl">
-    Componente
-  </div>
+        new THREE.RGBELoader()
+            .setDataType(THREE.UnsignedByteType)
+            .load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/equirectangular/royal_esplanade_1k.hdr', function (texture) {
+                const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+                scene.environment = envMap;
+                texture.dispose();
+                pmremGenerator.dispose();
+            });
 
-  <!-- Three.js + OrbitControls + Tween.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+        // Luzes direcionais de suporte para contraste
+        const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
 
-  <script>
-    // --- GLOBAL STATE ---
-    const state = {
-      rpm: 1200,
-      isPlaying: true,
-      explodeFactor: 0,
-      isXRay: false,
-      isWireframe: false,
-      selectedMesh: null,
-      engineAngle: 0,
-      fps: 60
-    };
+        const backLight = new THREE.DirectionalLight(0x00E5FF, 1.5);
+        backLight.position.set(-10, -20, -10);
+        scene.add(backLight);
 
-    // --- COMPONENT TECHNICAL DATABASE ---
-    const COMPONENT_DB = {
-      'block': {
-        name: 'Bloco do Motor V8 (90°)',
-        category: 'ESTRUTURA PRINCIPAL',
-        desc: 'Monobloco fundido com bancadas em V a 90°. Aloja as camisas dos 8 cilindros com canaletas internas de arrefecimento.',
-        material: 'Alumínio Fundido A356-T6',
-        alloy: 'Al-Si7Mg com Camisas Nodulares',
-        tolerance: '±0.005 mm',
-        temp: '90°C - 110°C'
-      },
-      'crankshaft': {
-        name: 'Virabrequim Forjado',
-        category: 'TREM DE FORÇA ROTATIVO',
-        desc: 'Eixo de manivelas em aço forjado de alta tenacidade. 4 moentes cruzados balanceados com contrapesos dinâmicos.',
-        material: 'Aço Forjado Nitrocarbonetado',
-        alloy: 'Chromoly 4340',
-        tolerance: '±0.002 mm',
-        temp: '80°C - 130°C'
-      },
-      'piston': {
-        name: 'Pistão Forjado de Alta Taxa',
-        category: 'SISTEMA DE COMBUSTÃO',
-        desc: 'Pistão com saia curta revestida em grafite anti-atrito, cavas de válvula na coroa e 3 anéis de vedação.',
-        material: 'Alumínio Forjado Aeronáutico',
-        alloy: 'Aluminum 2618-T6',
-        tolerance: '±0.008 mm',
-        temp: '220°C - 310°C'
-      },
-      'rod': {
-        name: 'Biela Perfil H-Beam',
-        category: 'TRANSMISSÃO CINEMÁTICA',
-        desc: 'Biela de perfil H forjada, conecta o pino de pistão ao moente do virabrequim sob extrema pressão de combustão.',
-        material: 'Aço Forjado Força Total',
-        alloy: 'AISI 4340 Chrome-Moly',
-        tolerance: '±0.003 mm',
-        temp: '90°C - 140°C'
-      },
-      'head': {
-        name: 'Cabeçote Dual Overhead Cam',
-        category: 'FLUXO DE GASES',
-        desc: 'Cabeçote de alumínio com galerias polidas de admissão e exaustão. Abriga o trem de válvulas e velas.',
-        material: 'Liga de Alumínio Térmico',
-        alloy: 'A356 Titanium Injected',
-        tolerance: '±0.004 mm',
-        temp: '120°C - 200°C'
-      },
-      'valve': {
-        name: 'Válvula de Titânio',
-        category: 'TREM DE VÁLVULAS',
-        desc: 'Válvulas com haste fina usinada em titânio e nitretação de plasma para alta rotação contínua.',
-        material: 'Titânio Grau 5 / Inconel',
-        alloy: 'Ti-6Al-4V',
-        tolerance: '±0.002 mm',
-        temp: '650°C - 850°C'
-      },
-      'manifold': {
-        name: 'Coletor de Escape Tubular',
-        category: 'EXAUSTÃO',
-        desc: 'Coletor em aço inoxidável com dutos mandrel-bent de comprimento equalizado (4 em 1).',
-        material: 'Aço Inoxidável',
-        alloy: 'Inox 304L',
-        tolerance: '±0.05 mm',
-        temp: '700°C - 950°C'
-      },
-      'cover': {
-        name: 'Tampa de Válvulas Quad-Cam',
-        category: 'PROTEÇÃO',
-        desc: 'Tampa superior com aletas de dissipação de calor e gaxeta de vedação de fluorpolímero.',
-        material: 'Liga de Magnésio',
-        alloy: 'Magnesium-Alloy Composite',
-        tolerance: '±0.1 mm',
-        temp: '70°C - 110°C'
-      }
-    };
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        scene.add(ambientLight);
 
-    // --- THREE.JS INITIALIZATION ---
-    const container = document.getElementById('canvas-container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x080a0f);
+        // 3. IMPORTAÇÃO DO MODELO GLB (Khronos 2-Cylinder Engine)
+        const loader = new THREE.GLTFLoader();
+        const modelUrl = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/2CylinderEngine/glTF-Binary/2CylinderEngine.glb';
+        
+        let engineModel, engineParts = [];
+        let isXray = false;
+        let autoRotate = false;
+        const xrayMaterial = new THREE.MeshBasicMaterial({ color: 0x00E5FF, wireframe: true, transparent: true, opacity: 0.15 });
+        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x00E5FF, emissiveIntensity: 0.8, roughness: 0.2, metalness: 0.8 });
 
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(18, 14, 22);
+        const loadingText = document.getElementById('loading-text');
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.3;
-    container.appendChild(renderer.domElement);
+        loader.load(
+            modelUrl,
+            (gltf) => {
+                engineModel = gltf.scene;
+                
+                // Centralizar e escalar modelo dinamicamente
+                const box = new THREE.Box3().setFromObject(engineModel);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                
+                const targetSize = 50; // Tamanho ideal para visualização
+                const scale = targetSize / maxDim;
+                engineModel.scale.set(scale, scale, scale);
+                
+                engineModel.position.sub(center.multiplyScalar(scale)); // Centraliza no mundo
+                scene.add(engineModel);
 
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.maxDistance = 100;
-    controls.minDistance = 5;
-    controls.target.set(0, 0, 0);
+                camera.position.set(targetSize, targetSize * 0.8, targetSize * 1.5);
+                controls.target.set(0, 0, 0);
 
-    // --- ROBUST LIGHTING SYSTEM (Guarantees render visibility on all GPUs) ---
-    const ambientLight = new THREE.AmbientLight(0x222b3d, 2.0);
-    scene.add(ambientLight);
+                // Processar peças para Vista Explodida e Salvar Materiais
+                engineModel.traverse((child) => {
+                    if (child.isMesh) {
+                        engineParts.push(child);
+                        
+                        // Salvar material original para toggle
+                        child.userData.originalMaterial = child.material;
+                        
+                        // Calcular vetor de explosão a partir do centro da peça até o centro do modelo
+                        child.geometry.computeBoundingBox();
+                        const partCenter = new THREE.Vector3();
+                        child.geometry.boundingBox.getCenter(partCenter);
+                        partCenter.multiplyScalar(scale); // Aplica a mesma escala
+                        
+                        // Adiciona a posição do nó pai para pegar o world position aproximado
+                        partCenter.add(child.position.clone().multiplyScalar(scale));
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x111622, 1.8);
-    hemiLight.position.set(0, 40, 0);
-    scene.add(hemiLight);
+                        child.userData.originalPosition = child.position.clone();
+                        // O vetor de explosão é a direção do centro (0,0,0) para a peça
+                        child.userData.explodeVector = partCenter.clone().normalize().multiplyScalar(targetSize * 0.8);
+                    }
+                });
 
-    const keyLight = new THREE.DirectionalLight(0x00f3ff, 2.2);
-    keyLight.position.set(20, 30, 20);
-    scene.add(keyLight);
-
-    const fillLight = new THREE.DirectionalLight(0xffb700, 1.2);
-    fillLight.position.set(-20, -10, -20);
-    scene.add(fillLight);
-
-    // --- MATERIALS ---
-    const materials = {
-      castIron: new THREE.MeshStandardMaterial({ color: 0x2e3646, roughness: 0.4, metalness: 0.8 }),
-      polishedSteel: new THREE.MeshStandardMaterial({ color: 0xe0e8f0, roughness: 0.15, metalness: 0.95 }),
-      forgedAluminum: new THREE.MeshStandardMaterial({ color: 0xb0c0d0, roughness: 0.3, metalness: 0.85 }),
-      titanium: new THREE.MeshStandardMaterial({ color: 0x8090a0, roughness: 0.25, metalness: 0.9 }),
-      darkMetal: new THREE.MeshStandardMaterial({ color: 0x181e28, roughness: 0.5, metalness: 0.7 }),
-      manifoldBronze: new THREE.MeshStandardMaterial({ color: 0x9e5e3a, roughness: 0.35, metalness: 0.8 }),
-      goldAccent: new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.2, metalness: 0.9 })
-    };
-
-    const outerMeshes = [];
-    const allInteractiveMeshes = [];
-    const engineGroup = new THREE.Group();
-    scene.add(engineGroup);
-
-    // --- ENGINE GEOMETRY PARAMETERS ---
-    const ENGINE_PARAMS = {
-      bankAngle: Math.PI / 4, // 45°
-      crankRadius: 1.6,
-      rodLength: 5.2,
-      numCylindersBank: 4
-    };
-
-    const animatedPistons = [];
-    const animatedRods = [];
-    const animatedValves = [];
-
-    // 1. CRANKSHAFT
-    const crankshaftGroup = new THREE.Group();
-    crankshaftGroup.userData = { id: 'crankshaft', explodeVec: new THREE.Vector3(0, -5, 0) };
-
-    const mainShaftGeo = new THREE.CylinderGeometry(0.75, 0.75, 14, 32);
-    mainShaftGeo.rotateX(Math.PI / 2);
-    const mainShaft = new THREE.Mesh(mainShaftGeo, materials.polishedSteel);
-    crankshaftGroup.add(mainShaft);
-
-    const crankPinAngles = [0, Math.PI / 2, Math.PI * 1.5, Math.PI];
-    const crankPinZPositions = [-4.5, -1.5, 1.5, 4.5];
-
-    crankPinZPositions.forEach((zPos, idx) => {
-      const angle = crankPinAngles[idx];
-
-      const cwShape = new THREE.Shape();
-      cwShape.absarc(0, 0, 2.4, Math.PI + angle - 0.7, Math.PI + angle + 0.7, false);
-      cwShape.lineTo(0, 0);
-      const cwGeo = new THREE.ExtrudeGeometry(cwShape, { depth: 0.6, bevelEnabled: false });
-      const cw1 = new THREE.Mesh(cwGeo, materials.castIron);
-      cw1.position.z = zPos - 0.5;
-      crankshaftGroup.add(cw1);
-
-      const pinGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.0, 24);
-      pinGeo.rotateX(Math.PI / 2);
-      const pin = new THREE.Mesh(pinGeo, materials.polishedSteel);
-      pin.position.set(Math.sin(angle) * ENGINE_PARAMS.crankRadius, -Math.cos(angle) * ENGINE_PARAMS.crankRadius, zPos);
-      crankshaftGroup.add(pin);
-    });
-
-    engineGroup.add(crankshaftGroup);
-    registerGroup(crankshaftGroup, 'crankshaft', false);
-
-    // 2. CYLINDER BLOCK
-    const blockGroup = new THREE.Group();
-    blockGroup.userData = { id: 'block', explodeVec: new THREE.Vector3(0, 0, 0) };
-
-    const blockShape = new THREE.Shape();
-    blockShape.moveTo(-5.5, -2.5);
-    blockShape.lineTo(-6.5, 2.8);
-    blockShape.lineTo(-1, 7.5);
-    blockShape.lineTo(1, 7.5);
-    blockShape.lineTo(6.5, 2.8);
-    blockShape.lineTo(5.5, -2.5);
-    blockShape.closePath();
-
-    const blockExtrude = new THREE.ExtrudeGeometry(blockShape, { depth: 13.5, bevelEnabled: false });
-    const blockMesh = new THREE.Mesh(blockExtrude, materials.castIron);
-    blockMesh.position.z = -6.75;
-    blockGroup.add(blockMesh);
-
-    engineGroup.add(blockGroup);
-    registerGroup(blockGroup, 'block', true);
-
-    // 3. PISTONS AND CONNECTING RODS
-    for (let b = 0; b < 2; b++) {
-      const isRight = b === 0;
-      const bankSign = isRight ? 1 : -1;
-      const bankAngle = bankSign * ENGINE_PARAMS.bankAngle;
-
-      for (let i = 0; i < ENGINE_PARAMS.numCylindersBank; i++) {
-        const cylinderId = b * 4 + i;
-        const crankPinAngle = crankPinAngles[i];
-        const zPos = crankPinZPositions[i] + (isRight ? -0.2 : 0.2);
-
-        // Piston Group
-        const pistonGroup = new THREE.Group();
-        pistonGroup.userData = {
-          id: 'piston',
-          cylinderIndex: cylinderId,
-          bankSign: bankSign,
-          bankAngle: bankAngle,
-          crankPinAngle: crankPinAngle,
-          zPos: zPos,
-          explodeVec: new THREE.Vector3(bankSign * 5, 5, 0)
-        };
-
-        const pistonGeo = new THREE.CylinderGeometry(1.45, 1.45, 1.5, 28);
-        const pistonMesh = new THREE.Mesh(pistonGeo, materials.forgedAluminum);
-        pistonMesh.rotation.z = -bankAngle;
-        pistonGroup.add(pistonMesh);
-
-        engineGroup.add(pistonGroup);
-        animatedPistons.push(pistonGroup);
-        registerGroup(pistonGroup, 'piston', false);
-
-        // Rod Group
-        const rodGroup = new THREE.Group();
-        rodGroup.userData = {
-          id: 'rod',
-          cylinderIndex: cylinderId,
-          zPos: zPos,
-          explodeVec: new THREE.Vector3(bankSign * 2.5, 2, 0)
-        };
-
-        const rodBeamGeo = new THREE.BoxGeometry(0.35, ENGINE_PARAMS.rodLength, 0.4);
-        const rodMesh = new THREE.Mesh(rodBeamGeo, materials.titanium);
-        rodMesh.position.y = ENGINE_PARAMS.rodLength / 2;
-        rodGroup.add(rodMesh);
-
-        engineGroup.add(rodGroup);
-        animatedRods.push(rodGroup);
-        registerGroup(rodGroup, 'rod', false);
-      }
-    }
-
-    // 4. HEADS & EXHAUST
-    for (let b = 0; b < 2; b++) {
-      const bankSign = b === 0 ? 1 : -1;
-      const bankAngle = bankSign * ENGINE_PARAMS.bankAngle;
-
-      // Cylinder Head
-      const headGroup = new THREE.Group();
-      headGroup.userData = { id: 'head', explodeVec: new THREE.Vector3(bankSign * 7, 7, 0) };
-      const headGeo = new THREE.BoxGeometry(3.8, 2.2, 13.8);
-      const headMesh = new THREE.Mesh(headGeo, materials.forgedAluminum);
-      headMesh.rotation.z = -bankAngle;
-      headMesh.position.set(bankSign * 5.8, 5.8, 0);
-      headGroup.add(headMesh);
-
-      engineGroup.add(headGroup);
-      registerGroup(headGroup, 'head', true);
-
-      // Valve Cover
-      const coverGroup = new THREE.Group();
-      coverGroup.userData = { id: 'cover', explodeVec: new THREE.Vector3(bankSign * 10, 10, 0) };
-      const coverGeo = new THREE.BoxGeometry(3.5, 1.0, 13.5);
-      const coverMesh = new THREE.Mesh(coverGeo, materials.darkMetal);
-      coverMesh.rotation.z = -bankAngle;
-      coverMesh.position.set(bankSign * 6.8, 6.8, 0);
-      coverGroup.add(coverMesh);
-
-      engineGroup.add(coverGroup);
-      registerGroup(coverGroup, 'cover', true);
-
-      // Exhaust Manifold
-      const manifoldGroup = new THREE.Group();
-      manifoldGroup.userData = { id: 'manifold', explodeVec: new THREE.Vector3(bankSign * 12, 1.5, 0) };
-
-      for (let i = 0; i < ENGINE_PARAMS.numCylindersBank; i++) {
-        const zPos = crankPinZPositions[i];
-        const pipeGeo = new THREE.CylinderGeometry(0.35, 0.35, 3.5, 16);
-        const pipeMesh = new THREE.Mesh(pipeGeo, materials.manifoldBronze);
-        pipeMesh.rotation.z = bankSign * 0.8;
-        pipeMesh.position.set(bankSign * 7.5, 3.5, zPos);
-        manifoldGroup.add(pipeMesh);
-      }
-
-      engineGroup.add(manifoldGroup);
-      registerGroup(manifoldGroup, 'manifold', true);
-    }
-
-    function registerGroup(group, componentId, isOuter) {
-      group.traverse((child) => {
-        if (child.isMesh) {
-          child.userData.componentId = componentId;
-          child.userData.parentGroup = group;
-          allInteractiveMeshes.push(child);
-          if (isOuter) outerMeshes.push(child);
-        }
-      });
-    }
-
-    // --- KINEMATICS ANIMATION LOOP ---
-    function updateEngineKinematics(delta) {
-      if (state.isPlaying && state.rpm > 0) {
-        const rps = state.rpm / 60;
-        state.engineAngle += rps * Math.PI * 2 * delta;
-      }
-
-      const theta = state.engineAngle;
-      const r = ENGINE_PARAMS.crankRadius;
-      const L = ENGINE_PARAMS.rodLength;
-
-      // Rotate Crankshaft
-      crankshaftGroup.rotation.z = theta;
-
-      // Animate Pistons & Rods
-      animatedPistons.forEach((piston) => {
-        const { bankSign, bankAngle, crankPinAngle, zPos, explodeVec } = piston.userData;
-        const phi = theta + crankPinAngle;
-
-        const relAngle = phi - bankAngle;
-        const dPar = -r * Math.cos(relAngle);
-        const dPerp = r * Math.sin(relAngle);
-        const pistonDist = dPar + Math.sqrt(Math.max(0, L * L - dPerp * dPerp));
-
-        const assembledPos = new THREE.Vector3(
-          Math.sin(bankAngle) * pistonDist,
-          Math.cos(bankAngle) * pistonDist,
-          zPos
+                // Ocultar Loader
+                const loaderEl = document.getElementById('loader');
+                loaderEl.style.opacity = '0';
+                setTimeout(() => loaderEl.style.display = 'none', 500);
+            },
+            (xhr) => {
+                const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                loadingText.innerText = `BAIXANDO GEOMETRIA: ${percent || 0}%`;
+            },
+            (error) => {
+                console.error('Erro ao carregar GLB:', error);
+                loadingText.innerText = 'ERRO AO CARREGAR MODELO. VERIFIQUE CONEXÃO.';
+                loadingText.style.color = '#ff0055';
+            }
         );
 
-        piston.position.copy(assembledPos).addScaledVector(explodeVec, state.explodeFactor);
+        // 4. LÓGICA DE INTERAÇÃO (Raycasting & Vista Explodida)
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let selectedObject = null;
+        const inspectorPanel = document.getElementById('inspector');
 
-        const rod = animatedRods.find(r => r.userData.cylinderIndex === piston.userData.cylinderIndex);
-        if (rod) {
-          const pinX = Math.sin(phi) * r;
-          const pinY = -Math.cos(phi) * r;
-          const pinPosWorld = new THREE.Vector3(pinX, pinY, zPos);
-          if (state.explodeFactor > 0) {
-            pinPosWorld.addScaledVector(crankshaftGroup.userData.explodeVec, state.explodeFactor);
-          }
+        window.addEventListener('click', (event) => {
+            // Ignorar cliques na UI
+            if(event.target.tagName === 'INPUT' || event.target.tagName === 'BUTTON') return;
 
-          rod.position.copy(pinPosWorld);
-          const rodDir = new THREE.Vector3().subVectors(piston.position, pinPosWorld);
-          rod.rotation.z = Math.atan2(rodDir.x, rodDir.y);
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            if (!engineModel) return;
+
+            const intersects = raycaster.intersectObject(engineModel, true);
+
+            if (intersects.length > 0) {
+                // Restaurar anterior
+                if (selectedObject && !isXray) {
+                    selectedObject.material = selectedObject.userData.originalMaterial;
+                }
+
+                selectedObject = intersects[0].object;
+                
+                // Aplicar Highlight
+                if (!isXray) {
+                    selectedObject.material = highlightMaterial;
+                }
+
+                // Atualizar UI
+                document.getElementById('part-name').innerText = selectedObject.name || 'Componente Genérico';
+                document.getElementById('part-mat').innerText = selectedObject.userData.originalMaterial.name || 'PBR Metal';
+                document.getElementById('part-vert').innerText = `${selectedObject.geometry.attributes.position.count} Vertices`;
+                
+                inspectorPanel.classList.add('active');
+            } else {
+                // Desmarcar
+                if (selectedObject && !isXray) {
+                    selectedObject.material = selectedObject.userData.originalMaterial;
+                }
+                selectedObject = null;
+                inspectorPanel.classList.remove('active');
+            }
+        });
+
+        // Controles de UI
+        const explodeSlider = document.getElementById('explode-slider');
+        explodeSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            engineParts.forEach(part => {
+                const start = part.userData.originalPosition;
+                const offset = part.userData.explodeVector.clone().multiplyScalar(val);
+                part.position.copy(start).add(offset);
+            });
+        });
+
+        document.getElementById('btn-xray').addEventListener('click', (e) => {
+            isXray = !isXray;
+            e.target.classList.toggle('active');
+            
+            engineParts.forEach(part => {
+                if (isXray) {
+                    part.material = xrayMaterial;
+                } else {
+                    part.material = part === selectedObject ? highlightMaterial : part.userData.originalMaterial;
+                }
+            });
+        });
+
+        document.getElementById('btn-spin').addEventListener('click', (e) => {
+            autoRotate = !autoRotate;
+            e.target.classList.toggle('active');
+            controls.autoRotate = autoRotate;
+            controls.autoRotateSpeed = 2.0;
+        });
+
+        // 5. LOOP DE ANIMAÇÃO E RESIZE
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
         }
-      });
 
-      // Exploded View Offsets for non-animated components
-      scene.traverse((obj) => {
-        if (obj.userData && obj.userData.explodeVec && !animatedPistons.includes(obj) && !animatedRods.includes(obj)) {
-          const targetOffset = obj.userData.explodeVec.clone().multiplyScalar(state.explodeFactor);
-          obj.position.copy(targetOffset);
-        }
-      });
-    }
-
-    // --- RAYCASTING & INTERACTION ---
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    const tooltip = document.getElementById('hover-tooltip');
-
-    window.addEventListener('pointermove', (e) => {
-      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-      tooltip.style.left = (e.clientX + 12) + 'px';
-      tooltip.style.top = (e.clientY + 12) + 'px';
-
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(allInteractiveMeshes, false);
-
-      if (intersects.length > 0) {
-        const compId = intersects[0].object.userData.componentId;
-        if (COMPONENT_DB[compId]) {
-          tooltip.innerText = COMPONENT_DB[compId].name;
-          tooltip.style.opacity = '1';
-        }
-      } else {
-        tooltip.style.opacity = '0';
-      }
-    });
-
-    window.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('.interactive-ui')) return;
-
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(allInteractiveMeshes, false);
-
-      if (intersects.length > 0) {
-        selectComponent(intersects[0].object.userData.componentId, intersects[0].object);
-      } else {
-        closeTechCard();
-      }
-    });
-
-    function selectComponent(compId, mesh) {
-      if (!COMPONENT_DB[compId]) return;
-
-      if (state.selectedMesh && state.selectedMesh.material.emissive) {
-        state.selectedMesh.material.emissive.setHex(0x000000);
-      }
-
-      state.selectedMesh = mesh;
-      if (mesh.material && mesh.material.emissive) {
-        mesh.material.emissive.setHex(0x00f3ff);
-        mesh.material.emissiveIntensity = 0.4;
-      }
-
-      const data = COMPONENT_DB[compId];
-      document.getElementById('part-name').innerText = data.name;
-      document.getElementById('part-category').innerText = data.category;
-      document.getElementById('part-desc').innerText = data.desc;
-      document.getElementById('part-material').innerText = data.material;
-      document.getElementById('part-alloy').innerText = data.alloy;
-      document.getElementById('part-tolerance').innerText = data.tolerance;
-      document.getElementById('part-temp').innerText = data.temp;
-
-      const card = document.getElementById('tech-card');
-      card.classList.remove('translate-x-[120%]', 'opacity-0');
-      card.classList.add('translate-x-0', 'opacity-100');
-    }
-
-    function closeTechCard() {
-      const card = document.getElementById('tech-card');
-      card.classList.add('translate-x-[120%]', 'opacity-0');
-      card.classList.remove('translate-x-0', 'opacity-100');
-
-      if (state.selectedMesh && state.selectedMesh.material.emissive) {
-        state.selectedMesh.material.emissive.setHex(0x000000);
-        state.selectedMesh = null;
-      }
-    }
-
-    // --- UI CONTROLS ---
-    function toggleEnginePlay() {
-      state.isPlaying = !state.isPlaying;
-      const status = document.getElementById('telemetry-status');
-      status.innerText = state.isPlaying ? 'EM OPERAÇÃO' : 'PAUSADO';
-      status.className = state.isPlaying ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold';
-      
-      try {
-        const icon = document.getElementById('icon-play');
-        icon.setAttribute('data-lucide', state.isPlaying ? 'pause' : 'play');
-        lucide.createIcons();
-      } catch(e) {}
-    }
-
-    function toggleXRayMode() {
-      state.isXRay = !state.isXRay;
-      document.getElementById('btn-xray').classList.toggle('bg-[#00f3ff]/20', state.isXRay);
-
-      outerMeshes.forEach((mesh) => {
-        mesh.material.transparent = state.isXRay;
-        mesh.material.opacity = state.isXRay ? 0.2 : 1.0;
-      });
-    }
-
-    function toggleWireframe() {
-      state.isWireframe = !state.isWireframe;
-      document.getElementById('btn-wireframe').classList.toggle('bg-emerald-500/20', state.isWireframe);
-
-      allInteractiveMeshes.forEach((mesh) => {
-        mesh.material.wireframe = state.isWireframe;
-      });
-    }
-
-    document.getElementById('slider-rpm').addEventListener('input', (e) => {
-      state.rpm = parseInt(e.target.value);
-      document.getElementById('val-rpm').innerText = state.rpm;
-      document.getElementById('telemetry-rpm').innerText = `${state.rpm} RPM`;
-    });
-
-    document.getElementById('slider-explode').addEventListener('input', (e) => {
-      state.explodeFactor = parseInt(e.target.value) / 100;
-      document.getElementById('val-explode').innerText = `${e.target.value}%`;
-    });
-
-    function setCameraView(preset) {
-      let targetCam = { x: 18, y: 14, z: 22 };
-      if (preset === 'front') targetCam = { x: 0, y: 2, z: 26 };
-      if (preset === 'side') targetCam = { x: 26, y: 4, z: 0 };
-      if (preset === 'top') targetCam = { x: 0, y: 30, z: 0.1 };
-
-      new TWEEN.Tween(camera.position)
-        .to(targetCam, 800)
-        .easing(TWEEN.Easing.Cubic.Out)
-        .start();
-    }
-
-    function resetCamera() {
-      setCameraView('iso');
-    }
-
-    // --- RENDER LOOP & RESIZE ---
-    const clock = new THREE.Clock();
-    let frameCount = 0;
-    let lastFpsUpdate = performance.now();
-
-    function animate() {
-      requestAnimationFrame(animate);
-
-      const delta = clock.getDelta();
-      TWEEN.update();
-
-      updateEngineKinematics(delta);
-      controls.update();
-
-      // FPS Telemetry
-      frameCount++;
-      const now = performance.now();
-      if (now - lastFpsUpdate >= 1000) {
-        state.fps = Math.round((frameCount * 1000) / (now - lastFpsUpdate));
-        document.getElementById('telemetry-fps').innerText = state.fps;
-        frameCount = 0;
-        lastFpsUpdate = now;
-      }
-
-      renderer.render(scene, camera);
-    }
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    });
-
-    // START ANIMATION & SAFE ICON INIT
-    window.onload = () => {
-      try {
-        if (window.lucide) lucide.createIcons();
-      } catch (e) {
-        console.warn('Lucide icons load error:', e);
-      }
-      animate();
-    };
-  </script>
+        animate();
+    </script>
 </body>
 </html>
