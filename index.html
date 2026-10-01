@@ -1,47 +1,63 @@
-html
 <!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>V8 Quad-Cam High-Performance Engine - CAD 3D</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>V8 Quad-Cam Engine - 3D CAD Simulator</title>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: Inter e JetBrains Mono -->
+  
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            brand: {
-              cyan: '#00f3ff',
-              dark: '#080a0f',
-              panel: '#0f131c',
-              border: '#1e2638',
-              accent: '#ff0055'
-            }
-          }
-        }
-      }
-    }
-  </script>
-  <style>
-    /* Estilização personalizada de scrollbar e sliders */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #080a0f; }
-    ::-webkit-scrollbar-thumb { background: #1e2638; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #00f3ff; }
 
+  <style>
+    /* Fixed viewport and z-index hierarchy to prevent black screen overlay issues */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #080a0f;
+      font-family: 'Inter', -apple-system, sans-serif;
+      touch-action: none;
+    }
+
+    #canvas-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      background: #080a0f;
+    }
+
+    .ui-layer {
+      position: relative;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .interactive-ui {
+      pointer-events: auto !important;
+    }
+
+    /* Glassmorphism panel style */
+    .glass-panel {
+      background: rgba(15, 19, 28, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(0, 243, 255, 0.2);
+    }
+
+    /* Custom range sliders */
     input[type=range] {
       -webkit-appearance: none;
       background: #182030;
@@ -50,223 +66,185 @@ html
     }
     input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      height: 16px;
-      width: 16px;
+      height: 18px;
+      width: 18px;
       border-radius: 50%;
       background: #00f3ff;
       cursor: pointer;
-      box-shadow: 0 0 10px rgba(0, 243, 255, 0.6);
-      transition: transform 0.1s ease;
+      box-shadow: 0 0 12px rgba(0, 243, 255, 0.8);
     }
-    input[type=range]::-webkit-slider-thumb:hover {
-      transform: scale(1.2);
-    }
-    .glass-panel {
-      background: rgba(15, 19, 28, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(0, 243, 255, 0.15);
-    }
-    .glow-cyan {
-      box-shadow: 0 0 15px rgba(0, 243, 255, 0.25);
-    }
-    .glow-cyan-text {
-      text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
-    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #080a0f; }
+    ::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 2px; }
   </style>
 </head>
-<body class="bg-[#080a0f] text-slate-200 font-sans overflow-hidden select-none w-screen h-screen">
+<body class="select-none text-slate-200">
 
-  <!-- CANVAS CONTAINER 3D -->
-  <div id="canvas-container" class="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"></div>
+  <!-- 3D WebGL Canvas Layer -->
+  <div id="canvas-container"></div>
 
-  <!-- HEADER / BARRA SUPERIOR DA INTERFACE CAD -->
-  <header class="absolute top-4 left-4 right-4 flex flex-wrap justify-between items-center pointer-events-none z-20 gap-4">
-    <div class="glass-panel rounded-xl px-5 py-3 pointer-events-auto flex items-center gap-4 border-l-4 border-l-[#00f3ff]">
-      <div class="bg-[#00f3ff]/10 p-2.5 rounded-lg border border-[#00f3ff]/30 text-[#00f3ff]">
-        <i data-lucide="cpu" class="w-6 h-6"></i>
-      </div>
-      <div>
-        <h1 class="font-mono text-sm sm:text-base font-bold tracking-wider text-white flex items-center gap-2">
-          V8 QUAD-CAM <span class="text-[#00f3ff] text-xs bg-[#00f3ff]/10 px-2 py-0.5 rounded border border-[#00f3ff]/30">4.0L HIGH-OUTPUT</span>
-        </h1>
-        <p class="text-xs text-slate-400 font-mono">SIMULADOR CAD 3D • CINEMÁTICA MECÂNICA EM TEMPO REAL</p>
-      </div>
-    </div>
+  <!-- UI Overlay Layer -->
+  <div class="ui-layer w-full h-full flex flex-col justify-between p-3 sm:p-5">
 
-    <!-- METRICAS DE TELEMETRIA EM TEMPO REAL -->
-    <div class="glass-panel rounded-xl px-4 py-2.5 pointer-events-auto hidden md:flex items-center gap-6 font-mono text-xs">
-      <div class="flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="text-slate-400">STATUS:</span>
-        <span id="telemetry-status" class="text-emerald-400 font-semibold">EM OPERAÇÃO</span>
-      </div>
-      <div class="h-4 w-[1px] bg-slate-800"></div>
-      <div>
-        <span class="text-slate-400">ROTAÇÃO:</span>
-        <span id="telemetry-rpm" class="text-[#00f3ff] font-bold">1200 RPM</span>
-      </div>
-      <div class="h-4 w-[1px] bg-slate-800"></div>
-      <div>
-        <span class="text-slate-400">CILINDROS:</span>
-        <span class="text-white font-bold">8 EM V (90°)</span>
-      </div>
-      <div class="h-4 w-[1px] bg-slate-800"></div>
-      <div>
-        <span class="text-slate-400">FPS:</span>
-        <span id="telemetry-fps" class="text-amber-400 font-bold">60</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- PAINEL LATERAL ESQUERDO: CONTROLES DE CÂMERA E PRESETS -->
-  <aside class="absolute left-4 top-28 pointer-events-auto z-20 flex flex-col gap-2">
-    <div class="glass-panel p-2 rounded-xl flex flex-col gap-1.5 shadow-2xl">
-      <div class="text-[10px] font-mono text-slate-400 px-2 py-1 uppercase tracking-wider">Visões de Câmera</div>
-      <button onclick="setCameraView('iso')" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-mono bg-slate-800/60 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] transition text-slate-300 border border-slate-700/50">
-        <i data-lucide="box" class="w-4 h-4"></i> Isométrica
-      </button>
-      <button onclick="setCameraView('front')" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-mono bg-slate-800/60 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] transition text-slate-300 border border-slate-700/50">
-        <i data-lucide="arrow-right-left" class="w-4 h-4"></i> Virabrequim (Frente)
-      </button>
-      <button onclick="setCameraView('side')" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-mono bg-slate-800/60 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] transition text-slate-300 border border-slate-700/50">
-        <i data-lucide="layout-grid" class="w-4 h-4"></i> Lateral Bancada
-      </button>
-      <button onclick="setCameraView('top')" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-mono bg-slate-800/60 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] transition text-slate-300 border border-slate-700/50">
-        <i data-lucide="arrow-down" class="w-4 h-4"></i> Superior Trem Válvulas
-      </button>
-      <button onclick="setCameraView('piston')" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-mono bg-slate-800/60 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] transition text-slate-300 border border-slate-700/50">
-        <i data-lucide="disc" class="w-4 h-4"></i> Foco Pistão #1
-      </button>
-    </div>
-  </aside>
-
-  <!-- PAINEL LATERAL DIREITO: FICHA TÉCNICA DO COMPONENTE SELECIONADO -->
-  <aside id="tech-card" class="absolute right-4 top-28 bottom-28 w-80 sm:w-96 glass-panel rounded-2xl p-5 pointer-events-auto z-20 flex flex-col justify-between transition-all duration-300 translate-x-[110%] opacity-0 shadow-2xl border border-[#00f3ff]/30 overflow-y-auto">
-    <div>
-      <div class="flex justify-between items-start mb-3 border-b border-slate-800 pb-3">
+    <!-- HEADER -->
+    <header class="flex justify-between items-start gap-4">
+      <div class="glass-panel rounded-xl p-3 sm:p-4 border-l-4 border-l-[#00f3ff] interactive-ui flex items-center gap-3">
+        <div class="bg-[#00f3ff]/10 p-2 rounded-lg border border-[#00f3ff]/30 text-[#00f3ff]">
+          <i data-lucide="cpu" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+        </div>
         <div>
-          <span id="part-category" class="text-[10px] font-mono px-2 py-0.5 rounded bg-[#00f3ff]/10 text-[#00f3ff] border border-[#00f3ff]/30 uppercase tracking-widest">SISTEMA MECÂNICO</span>
-          <h2 id="part-name" class="text-lg font-bold text-white mt-1">Nome do Componente</h2>
-        </div>
-        <button onclick="closeTechCard()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <p id="part-desc" class="text-xs text-slate-300 leading-relaxed mb-4">
-        Descrição técnica detalhada das propriedades funcionais e mecânicas do componente selecionado.
-      </p>
-
-      <div class="space-y-2.5 font-mono text-xs">
-        <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
-          <span class="text-slate-400">Material Base:</span>
-          <span id="part-material" class="text-slate-200 font-semibold">Liga Metal</span>
-        </div>
-        <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
-          <span class="text-slate-400">Liga Específica:</span>
-          <span id="part-alloy" class="text-[#00f3ff] font-semibold">Aço 4340</span>
-        </div>
-        <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
-          <span class="text-slate-400">Tolerância Usinagem:</span>
-          <span id="part-tolerance" class="text-amber-400 font-semibold">±0.005 mm</span>
-        </div>
-        <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
-          <span class="text-slate-400">Temp. Operação:</span>
-          <span id="part-[#00f3ff]" class="text-rose-400 font-semibold" id="part-temp">90°C - 250°C</span>
+          <h1 class="font-mono text-xs sm:text-sm font-bold text-white tracking-wider flex items-center gap-2">
+            V8 QUAD-CAM <span class="text-[#00f3ff] text-[10px] bg-[#00f3ff]/10 px-1.5 py-0.5 rounded border border-[#00f3ff]/30">4.0L HIGH-OUTPUT</span>
+          </h1>
+          <p class="text-[10px] sm:text-xs text-slate-400 font-mono">SIMULADOR CAD 3D • CINEMÁTICA MECÂNICA</p>
         </div>
       </div>
 
-      <!-- GRAFICO ILUSTRATIVO DE TENSÃO/DESEMPENHO -->
-      <div class="mt-4 p-3 bg-slate-900/90 rounded-xl border border-slate-800">
-        <div class="flex justify-between text-[10px] font-mono text-slate-400 mb-1">
-          <span>RESISTÊNCIA A FADIGA</span>
-          <span class="text-[#00f3ff]">98.4%</span>
+      <!-- TELEMETRY BADGES -->
+      <div class="glass-panel rounded-xl px-3 py-2 interactive-ui hidden sm:flex items-center gap-4 font-mono text-xs">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-slate-400">STATUS:</span>
+          <span id="telemetry-status" class="text-emerald-400 font-semibold">EM OPERAÇÃO</span>
         </div>
-        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-          <div class="bg-gradient-to-r from-blue-500 to-[#00f3ff] h-full w-[98%]"></div>
+        <div class="h-4 w-[1px] bg-slate-800"></div>
+        <div>
+          <span class="text-slate-400">ROTAÇÃO:</span>
+          <span id="telemetry-rpm" class="text-[#00f3ff] font-bold">1200 RPM</span>
+        </div>
+        <div class="h-4 w-[1px] bg-slate-800"></div>
+        <div>
+          <span class="text-slate-400">FPS:</span>
+          <span id="telemetry-fps" class="text-amber-400 font-bold">60</span>
         </div>
       </div>
-    </div>
+    </header>
 
-    <div class="mt-4 pt-3 border-t border-slate-800/80 flex gap-2">
-      <button onclick="isolateComponent()" class="flex-1 py-2 bg-[#00f3ff]/10 hover:bg-[#00f3ff]/20 text-[#00f3ff] border border-[#00f3ff]/30 rounded-lg font-mono text-xs font-semibold transition flex items-center justify-center gap-1.5">
-        <i data-lucide="eye" class="w-4 h-4"></i> Isolar Peça
-      </button>
-      <button onclick="resetIsolation()" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-mono text-xs transition" title="Restaurar Visibilidade">
-        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-      </button>
-    </div>
-  </aside>
-
-  <!-- CONTROLES FLUTUANTES INFERIORES (DASHBOARD AÇÃO) -->
-  <footer class="absolute bottom-4 left-4 right-4 pointer-events-auto z-20 flex justify-center">
-    <div class="glass-panel rounded-2xl p-4 w-full max-w-4xl shadow-2xl flex flex-wrap items-center justify-between gap-4">
+    <!-- MIDDLE SECTION: SIDEBAR & TECHNICAL HUD CARD -->
+    <div class="flex justify-between items-start my-auto pointer-events-none">
       
-      <!-- CONTROLES DE ANIMAÇÃO -->
+      <!-- CAMERA PRESETS SIDEBAR -->
+      <aside class="glass-panel p-2 rounded-xl flex flex-col gap-1.5 interactive-ui shadow-2xl">
+        <div class="text-[9px] font-mono text-slate-400 px-1.5 py-0.5 uppercase tracking-wider">Câmera</div>
+        <button onclick="setCameraView('iso')" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-mono bg-slate-800/80 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] text-slate-300 border border-slate-700/60 transition">
+          <i data-lucide="box" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Isométrica</span>
+        </button>
+        <button onclick="setCameraView('front')" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-mono bg-slate-800/80 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] text-slate-300 border border-slate-700/60 transition">
+          <i data-lucide="arrow-right-left" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Frente</span>
+        </button>
+        <button onclick="setCameraView('side')" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-mono bg-slate-800/80 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] text-slate-300 border border-slate-700/60 transition">
+          <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Lateral</span>
+        </button>
+        <button onclick="setCameraView('top')" class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-mono bg-slate-800/80 hover:bg-[#00f3ff]/20 hover:text-[#00f3ff] text-slate-300 border border-slate-700/60 transition">
+          <i data-lucide="arrow-down" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Superior</span>
+        </button>
+      </aside>
+
+      <!-- TECHNICAL HUD SIDE PANEL -->
+      <aside id="tech-card" class="w-72 sm:w-80 glass-panel rounded-2xl p-4 interactive-ui transition-all duration-300 translate-x-[120%] opacity-0 shadow-2xl border border-[#00f3ff]/30">
+        <div class="flex justify-between items-start border-b border-slate-800 pb-2 mb-3">
+          <div>
+            <span id="part-category" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#00f3ff]/10 text-[#00f3ff] border border-[#00f3ff]/30 uppercase">SISTEMA MECÂNICO</span>
+            <h2 id="part-name" class="text-sm font-bold text-white mt-1">Nome do Componente</h2>
+          </div>
+          <button onclick="closeTechCard()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <p id="part-desc" class="text-xs text-slate-300 leading-relaxed mb-3">
+          Clique em qualquer componente para examinar a engenharia e tolerâncias de fabricação.
+        </p>
+
+        <div class="space-y-2 font-mono text-[11px]">
+          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex justify-between">
+            <span class="text-slate-400">Material Base:</span>
+            <span id="part-material" class="text-slate-200 font-semibold">-</span>
+          </div>
+          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex justify-between">
+            <span class="text-slate-400">Liga Específica:</span>
+            <span id="part-alloy" class="text-[#00f3ff] font-semibold">-</span>
+          </div>
+          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex justify-between">
+            <span class="text-slate-400">Tolerância:</span>
+            <span id="part-tolerance" class="text-amber-400 font-semibold">-</span>
+          </div>
+          <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex justify-between">
+            <span class="text-slate-400">Temp. Operação:</span>
+            <span id="part-temp" class="text-rose-400 font-semibold">-</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- FOOTER DASHBOARD -->
+    <footer class="glass-panel rounded-2xl p-3 sm:p-4 w-full max-w-4xl mx-auto interactive-ui shadow-2xl flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- ENGINE PLAY / RPM -->
       <div class="flex items-center gap-3">
-        <button id="btn-play" onclick="toggleEnginePlay()" class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#00f3ff] to-blue-600 text-slate-950 flex items-center justify-center hover:brightness-110 transition shadow-lg shadow-[#00f3ff]/20">
+        <button id="btn-play" onclick="toggleEnginePlay()" class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00f3ff] to-blue-600 text-slate-950 flex items-center justify-center hover:brightness-110 transition shadow-lg shadow-[#00f3ff]/20">
           <i id="icon-play" data-lucide="pause" class="w-5 h-5 fill-current"></i>
         </button>
         <div>
-          <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Rotação do Motor</div>
+          <div class="text-[9px] font-mono text-slate-400 uppercase">Rotação RPM</div>
           <div class="flex items-center gap-2">
-            <input type="range" id="slider-rpm" min="0" max="6000" step="50" value="1200" class="w-28 sm:w-36">
-            <span id="val-rpm" class="font-mono text-xs font-bold text-[#00f3ff] min-w-[60px]">1200 RPM</span>
+            <input type="range" id="slider-rpm" min="0" max="6000" step="50" value="1200" class="w-24 sm:w-32">
+            <span id="val-rpm" class="font-mono text-xs font-bold text-[#00f3ff]">1200</span>
           </div>
         </div>
       </div>
 
-      <div class="h-8 w-[1px] bg-slate-800 hidden sm:block"></div>
+      <div class="h-6 w-[1px] bg-slate-800 hidden sm:block"></div>
 
-      <!-- SLIDER VISTA EXPLODIDA -->
+      <!-- EXPLODED VIEW SLIDER -->
       <div class="flex items-center gap-3">
-        <div class="bg-slate-800/80 p-2 rounded-lg border border-slate-700 text-slate-300">
-          <i data-lucide="layers" class="w-5 h-5"></i>
+        <div class="bg-slate-800/80 p-1.5 rounded-lg border border-slate-700 text-slate-300">
+          <i data-lucide="layers" class="w-4 h-4"></i>
         </div>
         <div>
-          <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Vista Explodida (CAD)</div>
+          <div class="text-[9px] font-mono text-slate-400 uppercase">Vista Explodida</div>
           <div class="flex items-center gap-2">
-            <input type="range" id="slider-explode" min="0" max="100" value="0" class="w-28 sm:w-40">
-            <span id="val-explode" class="font-mono text-xs font-bold text-amber-400 min-w-[40px]">0%</span>
+            <input type="range" id="slider-explode" min="0" max="100" value="0" class="w-24 sm:w-36">
+            <span id="val-explode" class="font-mono text-xs font-bold text-amber-400">0%</span>
           </div>
         </div>
       </div>
 
-      <div class="h-8 w-[1px] bg-slate-800 hidden md:block"></div>
+      <div class="h-6 w-[1px] bg-slate-800 hidden md:block"></div>
 
-      <!-- TOGGLES DE MODO VISUAL -->
+      <!-- VISUAL MODE TOGGLES -->
       <div class="flex items-center gap-2">
-        <button id="btn-xray" onclick="toggleXRayMode()" class="px-3 py-2 rounded-xl text-xs font-mono bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-2 transition">
-          <i data-lucide="box" class="w-4 h-4 text-[#00f3ff]"></i>
-          <span class="hidden sm:inline">Modo</span> Raio-X
+        <button id="btn-xray" onclick="toggleXRayMode()" class="px-2.5 py-1.5 rounded-xl text-xs font-mono bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
+          <i data-lucide="box" class="w-3.5 h-3.5 text-[#00f3ff]"></i> Raio-X
         </button>
 
-        <button id="btn-wireframe" onclick="toggleWireframe()" class="px-3 py-2 rounded-xl text-xs font-mono bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-2 transition">
-          <i data-lucide="grid" class="w-4 h-4 text-emerald-400"></i>
-          Wireframe
+        <button id="btn-wireframe" onclick="toggleWireframe()" class="px-2.5 py-1.5 rounded-xl text-xs font-mono bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
+          <i data-lucide="grid" class="w-3.5 h-3.5 text-emerald-400"></i> Malha
         </button>
 
-        <button onclick="resetCamera()" class="p-2 rounded-xl text-xs font-mono bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Resetar Visão">
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        <button onclick="resetCamera()" class="p-1.5 rounded-xl text-xs font-mono bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Resetar Visão">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
         </button>
       </div>
 
-    </div>
-  </footer>
+    </footer>
 
-  <!-- TOOLTIP DE HOVER FLUTUANTE -->
-  <div id="hover-tooltip" class="fixed pointer-events-none z-30 opacity-0 transition-opacity duration-150 glass-panel px-3 py-1.5 rounded-lg border border-[#00f3ff]/40 text-xs font-mono text-[#00f3ff] shadow-xl">
+  </div>
+
+  <!-- HOVER TOOLTIP -->
+  <div id="hover-tooltip" class="fixed pointer-events-none z-30 opacity-0 transition-opacity duration-150 glass-panel px-2.5 py-1 rounded-lg border border-[#00f3ff]/40 text-xs font-mono text-[#00f3ff] shadow-xl">
     Componente
   </div>
 
-  <!-- THREE.JS E BIBLIOTECAS AUXILIARES VIA CDN -->
+  <!-- Three.js + OrbitControls + Tween.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
   <script>
-    // --- ESTADO GLOBAL DA APLICAÇÃO ---
+    // --- GLOBAL STATE ---
     const state = {
       rpm: 1200,
       isPlaying: true,
@@ -274,286 +252,208 @@ html
       isXRay: false,
       isWireframe: false,
       selectedMesh: null,
-      isolatedGroup: null,
       engineAngle: 0,
-      fps: 60,
-      lastFrameTime: performance.now()
+      fps: 60
     };
 
-    // --- BASE DE DADOS TÉCNICA DOS COMPONENTES MECÂNICOS ---
+    // --- COMPONENT TECHNICAL DATABASE ---
     const COMPONENT_DB = {
       'block': {
-        name: 'Bloco do Motor V8 (Cylinder Block)',
+        name: 'Bloco do Motor V8 (90°)',
         category: 'ESTRUTURA PRINCIPAL',
-        desc: 'Monobloco usinado em alumínio fundido com ângulo bancadas em 90°. Possui camisas de cilindro integradas em ferro nodular e galerias internas de arrefecimento e lubrificação.',
+        desc: 'Monobloco fundido com bancadas em V a 90°. Aloja as camisas dos 8 cilindros com canaletas internas de arrefecimento.',
         material: 'Alumínio Fundido A356-T6',
-        alloy: 'Al-Si7Mg / Cast Iron Sleeves',
-        tolerance: '±0.005 mm (Bore Finish)',
+        alloy: 'Al-Si7Mg com Camisas Nodulares',
+        tolerance: '±0.005 mm',
         temp: '90°C - 110°C'
       },
       'crankshaft': {
-        name: 'Virabrequim Forjado (Crankshaft)',
+        name: 'Virabrequim Forjado',
         category: 'TREM DE FORÇA ROTATIVO',
-        desc: 'Eixo de manivelas de alta resistência usinado a partir de tarugo de aço forjado. Conta com 4 moentes cruzados a 90° e 8 contrapesos dinamicamente balanceados.',
+        desc: 'Eixo de manivelas em aço forjado de alta tenacidade. 4 moentes cruzados balanceados com contrapesos dinâmicos.',
         material: 'Aço Forjado Nitrocarbonetado',
-        alloy: '4340 Chromoly Steel',
-        tolerance: '±0.002 mm (Journal Polish)',
+        alloy: 'Chromoly 4340',
+        tolerance: '±0.002 mm',
         temp: '80°C - 130°C'
       },
       'piston': {
         name: 'Pistão Forjado de Alta Taxa',
-        category: 'CONJUNTO DE COMBUSTÃO',
-        desc: 'Pistão com saia curta revestida em teflon/grafite anti-atrito, coroa usinada com cavas de válvula e 3 canaletas para anéis de compressão e raspador de óleo.',
+        category: 'SISTEMA DE COMBUSTÃO',
+        desc: 'Pistão com saia curta revestida em grafite anti-atrito, cavas de válvula na coroa e 3 anéis de vedação.',
         material: 'Alumínio Forjado Aeronáutico',
-        alloy: 'Forged Aluminum 2618-T6',
-        tolerance: '±0.008 mm (Skirt Clearance)',
-        temp: '220°C - 310°C (Top Crown)'
+        alloy: 'Aluminum 2618-T6',
+        tolerance: '±0.008 mm',
+        temp: '220°C - 310°C'
       },
       'rod': {
-        name: 'Biela H-Beam (Connecting Rod)',
-        category: 'TRANSFERÊNCIA CINEMÁTICA',
-        desc: 'Biela de perfil H de alto desempenho conectando o pino de pistão ao virabrequim. Equipada com parafusos de retenção de liga de titânio ARP2000.',
-        material: 'Aço Forjado Alta Tensão',
+        name: 'Biela Perfil H-Beam',
+        category: 'TRANSMISSÃO CINEMÁTICA',
+        desc: 'Biela de perfil H forjada, conecta o pino de pistão ao moente do virabrequim sob extrema pressão de combustão.',
+        material: 'Aço Forjado Força Total',
         alloy: 'AISI 4340 Chrome-Moly',
-        tolerance: '±0.003 mm (Big End Bore)',
+        tolerance: '±0.003 mm',
         temp: '90°C - 140°C'
       },
       'head': {
         name: 'Cabeçote Dual Overhead Cam',
-        category: 'FLUXO DE GASES & VALVULAS',
-        desc: 'Cabeçote de alto fluxo com galerias de admissão e exaustão polidas. Aloja os eixos de comando de válvulas (DOHC) e alojamentos das velas.',
-        material: 'Liga de Alumínio Térmica',
-        alloy: 'A356 Titanium Alloy Injected',
-        tolerance: '±0.004 mm (Valve Guide)',
+        category: 'FLUXO DE GASES',
+        desc: 'Cabeçote de alumínio com galerias polidas de admissão e exaustão. Abriga o trem de válvulas e velas.',
+        material: 'Liga de Alumínio Térmico',
+        alloy: 'A356 Titanium Injected',
+        tolerance: '±0.004 mm',
         temp: '120°C - 200°C'
       },
       'valve': {
-        name: 'Válvula de Titânio (Intake/Exhaust)',
+        name: 'Válvula de Titânio',
         category: 'TREM DE VÁLVULAS',
-        desc: 'Válvulas com haste fina usinada em titânio e tratamento de nitretação de plasma. Permite fluxo gasoso otimizado sob até 9000 RPM.',
+        desc: 'Válvulas com haste fina usinada em titânio e nitretação de plasma para alta rotação contínua.',
         material: 'Titânio Grau 5 / Inconel',
-        alloy: 'Ti-6Al-4V / Inconel 751',
-        tolerance: '±0.002 mm (Stem Diameter)',
-        temp: '650°C - 850°C (Exhaust)'
-      },
-      'plug': {
-        name: 'Vela de Ignição Iridium Core',
-        category: 'SISTEMA DE IGNIÇÃO',
-        desc: 'Vela de alta voltagem com eletrodo central em liga de irídio usinado e isolador de cerâmica de alumina de alta rigidez dielétrica.',
-        material: 'Cerâmica Alumina & Irídio',
-        alloy: 'Iridium / Platinum Tip',
-        tolerance: 'Gap 0.8 mm ±0.02 mm',
-        temp: '450°C - 850°C'
+        alloy: 'Ti-6Al-4V',
+        tolerance: '±0.002 mm',
+        temp: '650°C - 850°C'
       },
       'manifold': {
-        name: 'Coletor de Exaustão Tubular',
-        category: 'SISTEMA DE ESCAPAMENTO',
-        desc: 'Headers tubulares em aço inoxidável com tubos primários de comprimento equalizado (4 em 1) para otimização do pulso de exaustão.',
-        material: 'Aço Inoxidável Mandrel-Bent',
-        alloy: 'Stainless Steel 304L / Inconel',
-        tolerance: 'Flange Flatness ±0.05 mm',
+        name: 'Coletor de Escape Tubular',
+        category: 'EXAUSTÃO',
+        desc: 'Coletor em aço inoxidável com dutos mandrel-bent de comprimento equalizado (4 em 1).',
+        material: 'Aço Inoxidável',
+        alloy: 'Inox 304L',
+        tolerance: '±0.05 mm',
         temp: '700°C - 950°C'
-      },
-      'oilpan': {
-        name: 'Cárter de Óleo com Defletores',
-        category: 'LUBRIFICAÇÃO E VEDAÇÃO',
-        desc: 'Reservatório inferior do óleo lubrificante com placas defletoras internas para evitar a cavitação da bomba de óleo sob altas acelerações g-force.',
-        material: 'Alumínio Estampado',
-        alloy: 'Alumínio 6061-T6',
-        tolerance: 'Flange Sealing ±0.1 mm',
-        temp: '80°C - 120°C'
       },
       'cover': {
         name: 'Tampa de Válvulas Quad-Cam',
-        category: 'PROTEÇÃO E VEDAÇÃO',
-        desc: 'Tampa superior do cabeçote estruturada com aletas de dissipação de calor, bocal de abastecimento de óleo e gaxeta de vedação sintética.',
-        material: 'Polímero Reforçado / Alumínio',
-        alloy: 'Magnesium-Aluminum Composite',
+        category: 'PROTEÇÃO',
+        desc: 'Tampa superior com aletas de dissipação de calor e gaxeta de vedação de fluorpolímero.',
+        material: 'Liga de Magnésio',
+        alloy: 'Magnesium-Alloy Composite',
         tolerance: '±0.1 mm',
         temp: '70°C - 110°C'
       }
     };
 
-    // --- INICIALIZAÇÃO DO THREE.JS ---
+    // --- THREE.JS INITIALIZATION ---
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x080a0f);
-    scene.fog = new THREE.FogExp2(0x080a0f, 0.012);
 
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(22, 16, 28);
+    camera.position.set(18, 14, 22);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.3;
     container.appendChild(renderer.domElement);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxDistance = 120;
-    controls.minDistance = 6;
+    controls.maxDistance = 100;
+    controls.minDistance = 5;
     controls.target.set(0, 0, 0);
 
-    // --- ILUMINAÇÃO ESTÚDIO INDUSTRIAL METÁLICO ---
-    const ambientLight = new THREE.AmbientLight(0x1a2233, 1.8);
+    // --- ROBUST LIGHTING SYSTEM (Guarantees render visibility on all GPUs) ---
+    const ambientLight = new THREE.AmbientLight(0x222b3d, 2.0);
     scene.add(ambientLight);
 
-    // Key Light (Ciano Frio CAD)
-    const keyLight = new THREE.DirectionalLight(0x00f3ff, 2.5);
-    keyLight.position.set(20, 30, 15);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.width = 2048;
-    keyLight.shadow.mapSize.height = 2048;
-    keyLight.shadow.bias = -0.0001;
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x111622, 1.8);
+    hemiLight.position.set(0, 40, 0);
+    scene.add(hemiLight);
+
+    const keyLight = new THREE.DirectionalLight(0x00f3ff, 2.2);
+    keyLight.position.set(20, 30, 20);
     scene.add(keyLight);
 
-    // Fill Light (Quente/Alumínio)
-    const fillLight = new THREE.DirectionalLight(0xffe2cc, 1.2);
-    fillLight.position.set(-20, 15, -15);
+    const fillLight = new THREE.DirectionalLight(0xffb700, 1.2);
+    fillLight.position.set(-20, -10, -20);
     scene.add(fillLight);
 
-    // Rim Light (Brilho Traseiro Neon)
-    const rimLight = new THREE.PointLight(0x7000ff, 3, 50);
-    rimLight.position.set(0, -10, -25);
-    scene.add(rimLight);
-
-    // --- MATERIAIS PBR REUTILIZÁVEIS ---
+    // --- MATERIALS ---
     const materials = {
-      castIron: new THREE.MeshStandardMaterial({ color: 0x242a36, roughness: 0.5, metalness: 0.85, name: 'castIron' }),
-      polishedSteel: new THREE.MeshStandardMaterial({ color: 0xd8e0e8, roughness: 0.12, metalness: 0.95, name: 'polishedSteel' }),
-      forgedAluminum: new THREE.MeshStandardMaterial({ color: 0xb5c4d4, roughness: 0.25, metalness: 0.88, name: 'forgedAluminum' }),
-      titanium: new THREE.MeshStandardMaterial({ color: 0x7a8b9e, roughness: 0.2, metalness: 0.92, name: 'titanium' }),
-      darkMetal: new THREE.MeshStandardMaterial({ color: 0x151922, roughness: 0.6, metalness: 0.7, name: 'darkMetal' }),
-      manifoldBronze: new THREE.MeshStandardMaterial({ color: 0x8a5233, roughness: 0.4, metalness: 0.85, name: 'manifoldBronze' }),
-      sparkCeramic: new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.1, metalness: 0.05, name: 'sparkCeramic' }),
-      goldAccent: new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.2, metalness: 0.9, name: 'goldAccent' })
+      castIron: new THREE.MeshStandardMaterial({ color: 0x2e3646, roughness: 0.4, metalness: 0.8 }),
+      polishedSteel: new THREE.MeshStandardMaterial({ color: 0xe0e8f0, roughness: 0.15, metalness: 0.95 }),
+      forgedAluminum: new THREE.MeshStandardMaterial({ color: 0xb0c0d0, roughness: 0.3, metalness: 0.85 }),
+      titanium: new THREE.MeshStandardMaterial({ color: 0x8090a0, roughness: 0.25, metalness: 0.9 }),
+      darkMetal: new THREE.MeshStandardMaterial({ color: 0x181e28, roughness: 0.5, metalness: 0.7 }),
+      manifoldBronze: new THREE.MeshStandardMaterial({ color: 0x9e5e3a, roughness: 0.35, metalness: 0.8 }),
+      goldAccent: new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.2, metalness: 0.9 })
     };
 
-    // Coleções de meshes para filtros Raio-X e Raycasting
     const outerMeshes = [];
-    const innerMeshes = [];
     const allInteractiveMeshes = [];
-
-    // GRUPO PRINCIPAL DO MOTOR
     const engineGroup = new THREE.Group();
     scene.add(engineGroup);
 
-    // --- GEOMETRIA PROCEDURAL DO MOTOR V8 ---
-    // Parâmetros Físicos do Motor
+    // --- ENGINE GEOMETRY PARAMETERS ---
     const ENGINE_PARAMS = {
-      bankAngle: Math.PI / 4, // 45 graus (V8 90 graus total)
-      crankRadius: 1.8,       // Curso do virabrequim
-      rodLength: 5.4,         // Comprimento da biela
-      cylinderSpacing: 3.2,   // Distância entre cilindros
+      bankAngle: Math.PI / 4, // 45°
+      crankRadius: 1.6,
+      rodLength: 5.2,
       numCylindersBank: 4
     };
 
-    // Arrays para guardar partes animadas individualmente
     const animatedPistons = [];
     const animatedRods = [];
     const animatedValves = [];
 
-    // 1. CONSTRUÇÃO DO VIRABREQUIM (CRANKSHAFT)
+    // 1. CRANKSHAFT
     const crankshaftGroup = new THREE.Group();
-    crankshaftGroup.userData = { id: 'crankshaft', explodeVec: new THREE.Vector3(0, -6, 0) };
+    crankshaftGroup.userData = { id: 'crankshaft', explodeVec: new THREE.Vector3(0, -5, 0) };
 
-    // Eixo Central
-    const mainShaftGeo = new THREE.CylinderGeometry(0.8, 0.8, 15, 32);
+    const mainShaftGeo = new THREE.CylinderGeometry(0.75, 0.75, 14, 32);
     mainShaftGeo.rotateX(Math.PI / 2);
     const mainShaft = new THREE.Mesh(mainShaftGeo, materials.polishedSteel);
     crankshaftGroup.add(mainShaft);
 
-    // Moentes e Contrapesos do Virabrequim (4 moentes para V8)
     const crankPinAngles = [0, Math.PI / 2, Math.PI * 1.5, Math.PI];
-    const crankPinZPositions = [-4.8, -1.6, 1.6, 4.8];
+    const crankPinZPositions = [-4.5, -1.5, 1.5, 4.5];
 
     crankPinZPositions.forEach((zPos, idx) => {
       const angle = crankPinAngles[idx];
 
-      // Contrapeso 1
       const cwShape = new THREE.Shape();
-      cwShape.absarc(0, 0, 2.6, Math.PI + angle - 0.8, Math.PI + angle + 0.8, false);
+      cwShape.absarc(0, 0, 2.4, Math.PI + angle - 0.7, Math.PI + angle + 0.7, false);
       cwShape.lineTo(0, 0);
-      const cwExtrude = new THREE.ExtrudeGeometry(cwShape, { depth: 0.7, bevelEnabled: true, bevelThickness: 0.1 });
-      const cwMesh1 = new THREE.Mesh(cwExtrude, materials.castIron);
-      cwMesh1.position.z = zPos - 0.6;
-      crankshaftGroup.add(cwMesh1);
+      const cwGeo = new THREE.ExtrudeGeometry(cwShape, { depth: 0.6, bevelEnabled: false });
+      const cw1 = new THREE.Mesh(cwGeo, materials.castIron);
+      cw1.position.z = zPos - 0.5;
+      crankshaftGroup.add(cw1);
 
-      // Moente (Crank Pin)
-      const pinGeo = new THREE.CylinderGeometry(0.65, 0.65, 1.1, 24);
+      const pinGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.0, 24);
       pinGeo.rotateX(Math.PI / 2);
-      const pinMesh = new THREE.Mesh(pinGeo, materials.polishedSteel);
-      pinMesh.position.set(
-        Math.sin(angle) * ENGINE_PARAMS.crankRadius,
-        -Math.cos(angle) * ENGINE_PARAMS.crankRadius,
-        zPos
-      );
-      crankshaftGroup.add(pinMesh);
-
-      // Contrapeso 2
-      const cwMesh2 = cwMesh1.clone();
-      cwMesh2.position.z = zPos + 0.3;
-      crankshaftGroup.add(cwMesh2);
+      const pin = new THREE.Mesh(pinGeo, materials.polishedSteel);
+      pin.position.set(Math.sin(angle) * ENGINE_PARAMS.crankRadius, -Math.cos(angle) * ENGINE_PARAMS.crankRadius, zPos);
+      crankshaftGroup.add(pin);
     });
 
-    // Volante de Motor (Flywheel) na extremidade
-    const flywheelGeo = new THREE.CylinderGeometry(3.6, 3.6, 0.8, 48);
-    flywheelGeo.rotateX(Math.PI / 2);
-    const flywheel = new THREE.Mesh(flywheelGeo, materials.darkMetal);
-    flywheel.position.z = -7.8;
-    crankshaftGroup.add(flywheel);
-
     engineGroup.add(crankshaftGroup);
-    registerInteractiveGroup(crankshaftGroup, 'crankshaft', false);
+    registerGroup(crankshaftGroup, 'crankshaft', false);
 
-    // 2. CONSTRUÇÃO DO BLOCO DO MOTOR (CYLINDER BLOCK)
+    // 2. CYLINDER BLOCK
     const blockGroup = new THREE.Group();
     blockGroup.userData = { id: 'block', explodeVec: new THREE.Vector3(0, 0, 0) };
 
-    // V-Block Corpo Central
     const blockShape = new THREE.Shape();
-    blockShape.moveTo(-6, -3);
-    blockShape.lineTo(-7, 3);
-    blockShape.lineTo(-1, 8);
-    blockShape.lineTo(1, 8);
-    blockShape.lineTo(7, 3);
-    blockShape.lineTo(6, -3);
+    blockShape.moveTo(-5.5, -2.5);
+    blockShape.lineTo(-6.5, 2.8);
+    blockShape.lineTo(-1, 7.5);
+    blockShape.lineTo(1, 7.5);
+    blockShape.lineTo(6.5, 2.8);
+    blockShape.lineTo(5.5, -2.5);
     blockShape.closePath();
 
-    const blockExtrude = new THREE.ExtrudeGeometry(blockShape, { depth: 14.5, bevelEnabled: true, bevelThickness: 0.2 });
+    const blockExtrude = new THREE.ExtrudeGeometry(blockShape, { depth: 13.5, bevelEnabled: false });
     const blockMesh = new THREE.Mesh(blockExtrude, materials.castIron);
-    blockMesh.position.z = -7.25;
+    blockMesh.position.z = -6.75;
     blockGroup.add(blockMesh);
 
-    // Camisas dos Cilindros (Cylinder Sleeves)
-    for (let b = 0; b < 2; b++) {
-      const bankSign = b === 0 ? 1 : -1;
-      const bankAngle = bankSign * ENGINE_PARAMS.bankAngle;
-
-      for (let i = 0; i < ENGINE_PARAMS.numCylindersBank; i++) {
-        const zPos = crankPinZPositions[i];
-        const sleeveGeo = new THREE.CylinderGeometry(1.65, 1.65, 7.5, 32, 1, true);
-        const sleeve = new THREE.Mesh(sleeveGeo, materials.polishedSteel);
-        sleeve.rotation.z = -bankAngle;
-        sleeve.position.set(
-          Math.sin(bankAngle) * 4.2,
-          Math.cos(bankAngle) * 4.2,
-          zPos
-        );
-        blockGroup.add(sleeve);
-      }
-    }
-
     engineGroup.add(blockGroup);
-    registerInteractiveGroup(blockGroup, 'block', true);
+    registerGroup(blockGroup, 'block', true);
 
-    // 3. CONSTRUÇÃO DOS PISTÕES E BIELAS (PISTONS & CONNECTING RODS)
-    for (let b = 0; b < 2; b++) { // 2 Bancadas (0: Direita, 1: Esquerda)
+    // 3. PISTONS AND CONNECTING RODS
+    for (let b = 0; b < 2; b++) {
       const isRight = b === 0;
       const bankSign = isRight ? 1 : -1;
       const bankAngle = bankSign * ENGINE_PARAMS.bankAngle;
@@ -561,9 +461,9 @@ html
       for (let i = 0; i < ENGINE_PARAMS.numCylindersBank; i++) {
         const cylinderId = b * 4 + i;
         const crankPinAngle = crankPinAngles[i];
-        const zPos = crankPinZPositions[i] + (isRight ? -0.25 : 0.25);
+        const zPos = crankPinZPositions[i] + (isRight ? -0.2 : 0.2);
 
-        // GRUPO PISTÃO
+        // Piston Group
         const pistonGroup = new THREE.Group();
         pistonGroup.userData = {
           id: 'piston',
@@ -572,236 +472,98 @@ html
           bankAngle: bankAngle,
           crankPinAngle: crankPinAngle,
           zPos: zPos,
-          explodeVec: new THREE.Vector3(bankSign * 6, 6, 0)
+          explodeVec: new THREE.Vector3(bankSign * 5, 5, 0)
         };
 
-        // Corpo do Pistão
-        const pistonHeadGeo = new THREE.CylinderGeometry(1.55, 1.55, 1.6, 32);
-        const pistonMesh = new THREE.Mesh(pistonHeadGeo, materials.forgedAluminum);
+        const pistonGeo = new THREE.CylinderGeometry(1.45, 1.45, 1.5, 28);
+        const pistonMesh = new THREE.Mesh(pistonGeo, materials.forgedAluminum);
         pistonMesh.rotation.z = -bankAngle;
         pistonGroup.add(pistonMesh);
 
-        // Anéis do Pistão (Gasket Rings)
-        for (let r = 0; r < 3; r++) {
-          const ringGeo = new THREE.TorusGeometry(1.56, 0.03, 8, 32);
-          ringGeo.rotateX(Math.PI / 2);
-          const ringMesh = new THREE.Mesh(ringGeo, materials.darkMetal);
-          ringMesh.position.y = 0.4 - r * 0.25;
-          pistonMesh.add(ringMesh);
-        }
-
-        // Pino do Pistão (Wrist Pin)
-        const wristPinGeo = new THREE.CylinderGeometry(0.35, 0.35, 2.2, 20);
-        wristPinGeo.rotateZ(Math.PI / 2);
-        const wristPin = new THREE.Mesh(wristPinGeo, materials.polishedSteel);
-        wristPin.position.y = -0.2;
-        pistonMesh.add(wristPin);
-
         engineGroup.add(pistonGroup);
         animatedPistons.push(pistonGroup);
-        registerInteractiveGroup(pistonGroup, 'piston', false);
+        registerGroup(pistonGroup, 'piston', false);
 
-        // GRUPO BIELA (CONNECTING ROD)
+        // Rod Group
         const rodGroup = new THREE.Group();
         rodGroup.userData = {
           id: 'rod',
           cylinderIndex: cylinderId,
-          pistonRef: pistonGroup,
           zPos: zPos,
-          explodeVec: new THREE.Vector3(bankSign * 3, 2, 0)
+          explodeVec: new THREE.Vector3(bankSign * 2.5, 2, 0)
         };
 
-        // Corpo da Biela (H-Beam Body)
-        const rodBeamGeo = new THREE.BoxGeometry(0.4, ENGINE_PARAMS.rodLength, 0.5);
+        const rodBeamGeo = new THREE.BoxGeometry(0.35, ENGINE_PARAMS.rodLength, 0.4);
         const rodMesh = new THREE.Mesh(rodBeamGeo, materials.titanium);
         rodMesh.position.y = ENGINE_PARAMS.rodLength / 2;
         rodGroup.add(rodMesh);
 
-        // Cabeça da Biela (Big End)
-        const bigEndGeo = new THREE.CylinderGeometry(0.85, 0.85, 0.6, 24);
-        bigEndGeo.rotateX(Math.PI / 2);
-        const bigEnd = new THREE.Mesh(bigEndGeo, materials.titanium);
-        rodGroup.add(bigEnd);
-
-        // Olho da Biela (Small End)
-        const smallEndGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.6, 24);
-        smallEndGeo.rotateX(Math.PI / 2);
-        const smallEnd = new THREE.Mesh(smallEndGeo, materials.titanium);
-        smallEnd.position.y = ENGINE_PARAMS.rodLength;
-        rodGroup.add(smallEnd);
-
         engineGroup.add(rodGroup);
         animatedRods.push(rodGroup);
-        registerInteractiveGroup(rodGroup, 'rod', false);
+        registerGroup(rodGroup, 'rod', false);
       }
     }
 
-    // 4. CABEÇOTES, VÁLVULAS, VELAS E COLETORES
+    // 4. HEADS & EXHAUST
     for (let b = 0; b < 2; b++) {
-      const isRight = b === 0;
-      const bankSign = isRight ? 1 : -1;
+      const bankSign = b === 0 ? 1 : -1;
       const bankAngle = bankSign * ENGINE_PARAMS.bankAngle;
 
-      // CABEÇOTE (CYLINDER HEAD)
+      // Cylinder Head
       const headGroup = new THREE.Group();
-      headGroup.userData = {
-        id: 'head',
-        explodeVec: new THREE.Vector3(bankSign * 8, 8, 0)
-      };
-
-      const headGeo = new THREE.BoxGeometry(4.2, 2.5, 14.8);
+      headGroup.userData = { id: 'head', explodeVec: new THREE.Vector3(bankSign * 7, 7, 0) };
+      const headGeo = new THREE.BoxGeometry(3.8, 2.2, 13.8);
       const headMesh = new THREE.Mesh(headGeo, materials.forgedAluminum);
       headMesh.rotation.z = -bankAngle;
-      headMesh.position.set(bankSign * 6.2, 6.2, 0);
+      headMesh.position.set(bankSign * 5.8, 5.8, 0);
       headGroup.add(headMesh);
 
       engineGroup.add(headGroup);
-      registerInteractiveGroup(headGroup, 'head', true);
+      registerGroup(headGroup, 'head', true);
 
-      // TAMPA DE VÁLVULAS (VALVE COVER)
+      // Valve Cover
       const coverGroup = new THREE.Group();
-      coverGroup.userData = {
-        id: 'cover',
-        explodeVec: new THREE.Vector3(bankSign * 12, 12, 0)
-      };
-
-      const coverGeo = new THREE.BoxGeometry(3.8, 1.2, 14.5);
+      coverGroup.userData = { id: 'cover', explodeVec: new THREE.Vector3(bankSign * 10, 10, 0) };
+      const coverGeo = new THREE.BoxGeometry(3.5, 1.0, 13.5);
       const coverMesh = new THREE.Mesh(coverGeo, materials.darkMetal);
       coverMesh.rotation.z = -bankAngle;
-      coverMesh.position.set(bankSign * 7.4, 7.4, 0);
+      coverMesh.position.set(bankSign * 6.8, 6.8, 0);
       coverGroup.add(coverMesh);
 
-      // Logo/Aletas no topo da tampa
-      const finGeo = new THREE.BoxGeometry(0.1, 0.1, 12);
-      for (let f = -1; f <= 1; f += 0.6) {
-        const fin = new THREE.Mesh(finGeo, materials.goldAccent);
-        fin.position.set(f, 0.65, 0);
-        coverMesh.add(fin);
-      }
-
       engineGroup.add(coverGroup);
-      registerInteractiveGroup(coverGroup, 'cover', true);
+      registerGroup(coverGroup, 'cover', true);
 
-      // COLETOR DE ESCAPAMENTO (EXHAUST MANIFOLD)
+      // Exhaust Manifold
       const manifoldGroup = new THREE.Group();
-      manifoldGroup.userData = {
-        id: 'manifold',
-        explodeVec: new THREE.Vector3(bankSign * 14, 2, 0)
-      };
+      manifoldGroup.userData = { id: 'manifold', explodeVec: new THREE.Vector3(bankSign * 12, 1.5, 0) };
 
       for (let i = 0; i < ENGINE_PARAMS.numCylindersBank; i++) {
         const zPos = crankPinZPositions[i];
-        const curve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(bankSign * 5.5, 5.0, zPos),
-          new THREE.Vector3(bankSign * 8.5, 3.0, zPos),
-          new THREE.Vector3(bankSign * 7.5, -2.0, zPos * 0.5)
-        ]);
-        const pipeGeo = new THREE.TubeGeometry(curve, 20, 0.45, 16, false);
+        const pipeGeo = new THREE.CylinderGeometry(0.35, 0.35, 3.5, 16);
         const pipeMesh = new THREE.Mesh(pipeGeo, materials.manifoldBronze);
+        pipeMesh.rotation.z = bankSign * 0.8;
+        pipeMesh.position.set(bankSign * 7.5, 3.5, zPos);
         manifoldGroup.add(pipeMesh);
       }
 
       engineGroup.add(manifoldGroup);
-      registerInteractiveGroup(manifoldGroup, 'manifold', true);
-
-      // VÁLVULAS E VELAS POR CILINDRO
-      for (let i = 0; i < ENGINE_PARAMS.numCylindersBank; i++) {
-        const zPos = crankPinZPositions[i];
-
-        // VÁLVULAS (2 por cilindro: Admissão e Escape)
-        for (let v = 0; v < 2; v++) {
-          const valveGroup = new THREE.Group();
-          valveGroup.userData = {
-            id: 'valve',
-            cylinderIndex: b * 4 + i,
-            isExhaust: v === 1,
-            explodeVec: new THREE.Vector3(bankSign * 9, 10, 0)
-          };
-
-          const valveStemGeo = new THREE.CylinderGeometry(0.12, 0.12, 2.2, 16);
-          const valveHeadGeo = new THREE.CylinderGeometry(0.55, 0.1, 0.2, 20);
-          valveHeadGeo.position.y = -1.1;
-
-          const stemMesh = new THREE.Mesh(valveStemGeo, materials.titanium);
-          const headMesh = new THREE.Mesh(valveHeadGeo, materials.titanium);
-          valveGroup.add(stemMesh);
-          valveGroup.add(headMesh);
-
-          valveGroup.rotation.z = -bankAngle;
-          valveGroup.position.set(
-            bankSign * (5.5 + (v === 0 ? -0.4 : 0.4)),
-            6.5,
-            zPos + (v === 0 ? -0.3 : 0.3)
-          );
-
-          engineGroup.add(valveGroup);
-          animatedValves.push(valveGroup);
-          registerInteractiveGroup(valveGroup, 'valve', false);
-        }
-
-        // VELA DE IGNIÇÃO (SPARK PLUG)
-        const plugGroup = new THREE.Group();
-        plugGroup.userData = {
-          id: 'plug',
-          explodeVec: new THREE.Vector3(bankSign * 10, 11, 0)
-        };
-
-        const plugBodyGeo = new THREE.CylinderGeometry(0.25, 0.25, 1.4, 16);
-        const plugCeramicGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.8, 16);
-        plugCeramicGeo.position.y = 0.8;
-
-        const plugBody = new THREE.Mesh(plugBodyGeo, materials.polishedSteel);
-        const plugCeramic = new THREE.Mesh(plugCeramicGeo, materials.sparkCeramic);
-        plugGroup.add(plugBody);
-        plugGroup.add(plugCeramic);
-
-        plugGroup.rotation.z = -bankAngle;
-        plugGroup.position.set(bankSign * 5.8, 7.2, zPos);
-
-        engineGroup.add(plugGroup);
-        registerInteractiveGroup(plugGroup, 'plug', false);
-      }
+      registerGroup(manifoldGroup, 'manifold', true);
     }
 
-    // 5. CÁRTER DE ÓLEO (OIL PAN)
-    const oilPanGroup = new THREE.Group();
-    oilPanGroup.userData = {
-      id: 'oilpan',
-      explodeVec: new THREE.Vector3(0, -12, 0)
-    };
-
-    const panShape = new THREE.Shape();
-    panShape.moveTo(-5.5, -3);
-    panShape.lineTo(5.5, -3);
-    panShape.lineTo(4.0, -6.5);
-    panShape.lineTo(-4.0, -6.5);
-    panShape.closePath();
-
-    const panExtrude = new THREE.ExtrudeGeometry(panShape, { depth: 14, bevelEnabled: true, bevelThickness: 0.2 });
-    const panMesh = new THREE.Mesh(panExtrude, materials.darkMetal);
-    panMesh.position.z = -7.0;
-    oilPanGroup.add(panMesh);
-
-    engineGroup.add(oilPanGroup);
-    registerInteractiveGroup(oilPanGroup, 'oilpan', true);
-
-    // FUNÇÃO AUXILIAR PARA REGISTRAR OBJETOS NA CENA PARA SELEÇÃO
-    function registerInteractiveGroup(group, componentId, isOuter) {
+    function registerGroup(group, componentId, isOuter) {
       group.traverse((child) => {
         if (child.isMesh) {
           child.userData.componentId = componentId;
           child.userData.parentGroup = group;
           allInteractiveMeshes.push(child);
           if (isOuter) outerMeshes.push(child);
-          else innerMeshes.push(child);
         }
       });
     }
 
-    // --- MATEMÁTICA CINEMÁTICA DA ANIMAÇÃO DO MOTOR ---
+    // --- KINEMATICS ANIMATION LOOP ---
     function updateEngineKinematics(delta) {
       if (state.isPlaying && state.rpm > 0) {
-        // Incrementa o ângulo do virabrequim com base no RPM
         const rps = state.rpm / 60;
         state.engineAngle += rps * Math.PI * 2 * delta;
       }
@@ -810,114 +572,68 @@ html
       const r = ENGINE_PARAMS.crankRadius;
       const L = ENGINE_PARAMS.rodLength;
 
-      // 1. ROTACIONAR VIRABREQUIM
+      // Rotate Crankshaft
       crankshaftGroup.rotation.z = theta;
 
-      // 2. ATUALIZAR PISTÕES E BIELAS
+      // Animate Pistons & Rods
       animatedPistons.forEach((piston) => {
         const { bankSign, bankAngle, crankPinAngle, zPos, explodeVec } = piston.userData;
         const phi = theta + crankPinAngle;
 
-        // Posição 3D do moente do virabrequim
-        const pinX = Math.sin(phi) * r;
-        const pinY = -Math.cos(phi) * r;
-
-        // Ângulo relativo entre a bancada do cilindro e o vetor do moente
         const relAngle = phi - bankAngle;
-
-        // Trigonometria real do movimento alternativo Pistão-Biela
-        // S = r * cos(relAngle) + sqrt(L^2 - (r * sin(relAngle))^2)
         const dPar = -r * Math.cos(relAngle);
         const dPerp = r * Math.sin(relAngle);
         const pistonDist = dPar + Math.sqrt(Math.max(0, L * L - dPerp * dPerp));
 
-        // Posição montada do pistão
         const assembledPos = new THREE.Vector3(
           Math.sin(bankAngle) * pistonDist,
           Math.cos(bankAngle) * pistonDist,
           zPos
         );
 
-        // Aplicação do deslocamento da Vista Explodida
-        const explodedPos = assembledPos.clone().addScaledVector(explodeVec, state.explodeFactor);
-        piston.position.copy(explodedPos);
+        piston.position.copy(assembledPos).addScaledVector(explodeVec, state.explodeFactor);
 
-        // Atualizar Biela correspondente
         const rod = animatedRods.find(r => r.userData.cylinderIndex === piston.userData.cylinderIndex);
         if (rod) {
+          const pinX = Math.sin(phi) * r;
+          const pinY = -Math.cos(phi) * r;
           const pinPosWorld = new THREE.Vector3(pinX, pinY, zPos);
           if (state.explodeFactor > 0) {
             pinPosWorld.addScaledVector(crankshaftGroup.userData.explodeVec, state.explodeFactor);
           }
 
-          const pistonWristPinWorld = new THREE.Vector3(
-            piston.position.x - Math.sin(bankAngle) * 0.2,
-            piston.position.y - Math.cos(bankAngle) * 0.2,
-            zPos
-          );
-
-          // Posicionar biela entre o moente e o pino do pistão
           rod.position.copy(pinPosWorld);
-          
-          // Orientação angular da biela direcionando para o pistão
-          const rodDir = new THREE.Vector3().subVectors(pistonWristPinWorld, pinPosWorld);
+          const rodDir = new THREE.Vector3().subVectors(piston.position, pinPosWorld);
           rod.rotation.z = Math.atan2(rodDir.x, rodDir.y);
         }
       });
 
-      // 3. ATUALIZAR VÁLVULAS (ACIONAMENTO POR CAMA)
-      animatedValves.forEach((valve) => {
-        const { cylinderIndex, isExhaust, explodeVec } = valve.userData;
-        const piston = animatedPistons.find(p => p.userData.cylinderIndex === cylinderIndex);
-        if (piston) {
-          const phi = theta + piston.userData.crankPinAngle + (isExhaust ? Math.PI : 0);
-          // Perfil de elevação de Válvula
-          const valveLift = Math.max(0, Math.sin(phi)) * 0.35;
-          const bankAngle = piston.userData.bankAngle;
-          const bankSign = piston.userData.bankSign;
-
-          const basePos = new THREE.Vector3(
-            bankSign * (5.5 + (isExhaust ? 0.4 : -0.4)),
-            6.5,
-            piston.userData.zPos + (isExhaust ? 0.3 : -0.3)
-          );
-
-          basePos.x -= Math.sin(bankAngle) * valveLift;
-          basePos.y -= Math.cos(bankAngle) * valveLift;
-
-          basePos.addScaledVector(explodeVec, state.explodeFactor);
-          valve.position.copy(basePos);
-        }
-      });
-
-      // 4. ATUALIZAR DEMAIS COMPONENTES PARA VISTA EXPLODIDA
+      // Exploded View Offsets for non-animated components
       scene.traverse((obj) => {
-        if (obj.userData && obj.userData.explodeVec && !animatedPistons.includes(obj) && !animatedValves.includes(obj) && !animatedRods.includes(obj)) {
+        if (obj.userData && obj.userData.explodeVec && !animatedPistons.includes(obj) && !animatedRods.includes(obj)) {
           const targetOffset = obj.userData.explodeVec.clone().multiplyScalar(state.explodeFactor);
           obj.position.copy(targetOffset);
         }
       });
     }
 
-    // --- RAYCASTING E SELEÇÃO DE PEÇAS ---
+    // --- RAYCASTING & INTERACTION ---
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     const tooltip = document.getElementById('hover-tooltip');
 
-    window.addEventListener('mousemove', (e) => {
+    window.addEventListener('pointermove', (e) => {
       mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
-      // Tooltip flutuante
-      tooltip.style.left = (e.clientX + 15) + 'px';
-      tooltip.style.top = (e.clientY + 15) + 'px';
+      tooltip.style.left = (e.clientX + 12) + 'px';
+      tooltip.style.top = (e.clientY + 12) + 'px';
 
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(allInteractiveMeshes, false);
 
       if (intersects.length > 0) {
-        const hitMesh = intersects[0].object;
-        const compId = hitMesh.userData.componentId;
+        const compId = intersects[0].object.userData.componentId;
         if (COMPONENT_DB[compId]) {
           tooltip.innerText = COMPONENT_DB[compId].name;
           tooltip.style.opacity = '1';
@@ -927,37 +643,32 @@ html
       }
     });
 
-    window.addEventListener('click', (e) => {
-      // Ignorar cliques se forem em botões da UI
-      if (e.target.closest('button') || e.target.closest('input') || e.target.closest('aside')) return;
+    window.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.interactive-ui')) return;
 
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(allInteractiveMeshes, false);
 
       if (intersects.length > 0) {
-        const hitMesh = intersects[0].object;
-        selectComponent(hitMesh.userData.componentId, hitMesh);
+        selectComponent(intersects[0].object.userData.componentId, intersects[0].object);
       } else {
-        deselectComponent();
+        closeTechCard();
       }
     });
 
-    // --- SELEÇÃO E EXIBIÇÃO DA FICHA TÉCNICA ---
     function selectComponent(compId, mesh) {
       if (!COMPONENT_DB[compId]) return;
 
-      // Remover brilho anterior
-      if (state.selectedMesh && state.selectedMesh.material) {
-        state.selectedMesh.material.emissive?.setHex(0x000000);
+      if (state.selectedMesh && state.selectedMesh.material.emissive) {
+        state.selectedMesh.material.emissive.setHex(0x000000);
       }
 
       state.selectedMesh = mesh;
-      if (mesh && mesh.material && mesh.material.emissive) {
+      if (mesh.material && mesh.material.emissive) {
         mesh.material.emissive.setHex(0x00f3ff);
-        mesh.material.emissiveIntensity = 0.5;
+        mesh.material.emissiveIntensity = 0.4;
       }
 
-      // Preencher dados na Ficha Técnica lateral
       const data = COMPONENT_DB[compId];
       document.getElementById('part-name').innerText = data.name;
       document.getElementById('part-category').innerText = data.category;
@@ -967,97 +678,58 @@ html
       document.getElementById('part-tolerance').innerText = data.tolerance;
       document.getElementById('part-temp').innerText = data.temp;
 
-      // Exibir Card com animação
-      const techCard = document.getElementById('tech-card');
-      techCard.classList.remove('translate-x-[110%]', 'opacity-0');
-      techCard.classList.add('translate-x-0', 'opacity-100');
+      const card = document.getElementById('tech-card');
+      card.classList.remove('translate-x-[120%]', 'opacity-0');
+      card.classList.add('translate-x-0', 'opacity-100');
     }
 
     function closeTechCard() {
-      const techCard = document.getElementById('tech-card');
-      techCard.classList.add('translate-x-[110%]', 'opacity-0');
-      techCard.classList.remove('translate-x-0', 'opacity-100');
+      const card = document.getElementById('tech-card');
+      card.classList.add('translate-x-[120%]', 'opacity-0');
+      card.classList.remove('translate-x-0', 'opacity-100');
 
-      if (state.selectedMesh && state.selectedMesh.material) {
-        state.selectedMesh.material.emissive?.setHex(0x000000);
+      if (state.selectedMesh && state.selectedMesh.material.emissive) {
+        state.selectedMesh.material.emissive.setHex(0x000000);
         state.selectedMesh = null;
       }
     }
 
-    function deselectComponent() {
-      closeTechCard();
+    // --- UI CONTROLS ---
+    function toggleEnginePlay() {
+      state.isPlaying = !state.isPlaying;
+      const status = document.getElementById('telemetry-status');
+      status.innerText = state.isPlaying ? 'EM OPERAÇÃO' : 'PAUSADO';
+      status.className = state.isPlaying ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold';
+      
+      try {
+        const icon = document.getElementById('icon-play');
+        icon.setAttribute('data-lucide', state.isPlaying ? 'pause' : 'play');
+        lucide.createIcons();
+      } catch(e) {}
     }
 
-    // --- MODO RAIO-X E WIREFRAME ---
     function toggleXRayMode() {
       state.isXRay = !state.isXRay;
-      const btn = document.getElementById('btn-xray');
-      btn.classList.toggle('bg-[#00f3ff]/20', state.isXRay);
-      btn.classList.toggle('border-[#00f3ff]', state.isXRay);
+      document.getElementById('btn-xray').classList.toggle('bg-[#00f3ff]/20', state.isXRay);
 
       outerMeshes.forEach((mesh) => {
-        if (state.isXRay) {
-          mesh.material.transparent = true;
-          mesh.material.opacity = 0.18;
-          mesh.material.depthWrite = false;
-        } else {
-          mesh.material.transparent = false;
-          mesh.material.opacity = 1.0;
-          mesh.material.depthWrite = true;
-        }
+        mesh.material.transparent = state.isXRay;
+        mesh.material.opacity = state.isXRay ? 0.2 : 1.0;
       });
     }
 
     function toggleWireframe() {
       state.isWireframe = !state.isWireframe;
-      const btn = document.getElementById('btn-wireframe');
-      btn.classList.toggle('bg-emerald-500/20', state.isWireframe);
-      btn.classList.toggle('border-emerald-500', state.isWireframe);
+      document.getElementById('btn-wireframe').classList.toggle('bg-emerald-500/20', state.isWireframe);
 
       allInteractiveMeshes.forEach((mesh) => {
         mesh.material.wireframe = state.isWireframe;
       });
     }
 
-    // --- ISOLAMENTO DE COMPONENTES ---
-    function isolateComponent() {
-      if (!state.selectedMesh) return;
-      const targetGroup = state.selectedMesh.userData.parentGroup;
-
-      allInteractiveMeshes.forEach((mesh) => {
-        if (mesh.userData.parentGroup !== targetGroup) {
-          mesh.visible = false;
-        }
-      });
-    }
-
-    function resetIsolation() {
-      allInteractiveMeshes.forEach((mesh) => {
-        mesh.visible = true;
-      });
-    }
-
-    // --- CONTROLES DE ANIMAÇÃO E SLIDERS ---
-    function toggleEnginePlay() {
-      state.isPlaying = !state.isPlaying;
-      const icon = document.getElementById('icon-play');
-      const status = document.getElementById('telemetry-status');
-
-      if (state.isPlaying) {
-        icon.setAttribute('data-lucide', 'pause');
-        status.innerText = 'EM OPERAÇÃO';
-        status.className = 'text-emerald-400 font-semibold';
-      } else {
-        icon.setAttribute('data-lucide', 'play');
-        status.innerText = 'PAUSADO';
-        status.className = 'text-amber-400 font-semibold';
-      }
-      lucide.createIcons();
-    }
-
     document.getElementById('slider-rpm').addEventListener('input', (e) => {
       state.rpm = parseInt(e.target.value);
-      document.getElementById('val-rpm').innerText = `${state.rpm} RPM`;
+      document.getElementById('val-rpm').innerText = state.rpm;
       document.getElementById('telemetry-rpm').innerText = `${state.rpm} RPM`;
     });
 
@@ -1066,37 +738,14 @@ html
       document.getElementById('val-explode').innerText = `${e.target.value}%`;
     });
 
-    // --- PRESETS DE CÂMERA (TWEEN ANIMAÇÃO SUAVE) ---
     function setCameraView(preset) {
-      let targetCam = { x: 22, y: 16, z: 28 };
-      let targetLook = { x: 0, y: 0, z: 0 };
-
-      switch (preset) {
-        case 'iso':
-          targetCam = { x: 22, y: 16, z: 28 };
-          break;
-        case 'front':
-          targetCam = { x: 0, y: 2, z: 32 };
-          break;
-        case 'side':
-          targetCam = { x: 32, y: 5, z: 0 };
-          break;
-        case 'top':
-          targetCam = { x: 0, y: 35, z: 0.1 };
-          break;
-        case 'piston':
-          targetCam = { x: 8, y: 10, z: -4 };
-          targetLook = { x: 4, y: 4, z: -4.8 };
-          break;
-      }
+      let targetCam = { x: 18, y: 14, z: 22 };
+      if (preset === 'front') targetCam = { x: 0, y: 2, z: 26 };
+      if (preset === 'side') targetCam = { x: 26, y: 4, z: 0 };
+      if (preset === 'top') targetCam = { x: 0, y: 30, z: 0.1 };
 
       new TWEEN.Tween(camera.position)
-        .to(targetCam, 1000)
-        .easing(TWEEN.Easing.Cubic.Out)
-        .start();
-
-      new TWEEN.Tween(controls.target)
-        .to(targetLook, 1000)
+        .to(targetCam, 800)
         .easing(TWEEN.Easing.Cubic.Out)
         .start();
     }
@@ -1105,7 +754,7 @@ html
       setCameraView('iso');
     }
 
-    // --- LOOP PRINCIPAL DE RENDERIZAÇÃO ---
+    // --- RENDER LOOP & RESIZE ---
     const clock = new THREE.Clock();
     let frameCount = 0;
     let lastFpsUpdate = performance.now();
@@ -1116,13 +765,10 @@ html
       const delta = clock.getDelta();
       TWEEN.update();
 
-      // Atualizar cinemática física do motor
       updateEngineKinematics(delta);
-
-      // Atualizar Controles Orbitais
       controls.update();
 
-      // Cálculo Telemetria de FPS
+      // FPS Telemetry
       frameCount++;
       const now = performance.now();
       if (now - lastFpsUpdate >= 1000) {
@@ -1135,16 +781,20 @@ html
       renderer.render(scene, camera);
     }
 
-    // REDIMENSIONAMENTO RESPONSIVO
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     });
 
-    // INICIALIZAÇÃO DOS ÍCONES E LOOP
+    // START ANIMATION & SAFE ICON INIT
     window.onload = () => {
-      lucide.createIcons();
+      try {
+        if (window.lucide) lucide.createIcons();
+      } catch (e) {
+        console.warn('Lucide icons load error:', e);
+      }
       animate();
     };
   </script>
