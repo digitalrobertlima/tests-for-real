@@ -1,493 +1,589 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motor 3D | Inspeção CAD Avançada</title>
+    <title>SatsPool - Empréstimos Rápidos via Bipa</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Ethers.js CDN for Invisible Web3 Integration -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        carbon: {
+                            900: '#0F1115',
+                            800: '#14171F',
+                            700: '#1A1E26',
+                            600: '#222834',
+                            500: '#2A303C'
+                        },
+                        cyan: {
+                            neon: '#00BFFF',
+                            glow: 'rgba(0, 191, 255, 0.25)',
+                            dark: '#008BBA'
+                        },
+                        pink: {
+                            neon: '#FF007F',
+                            glow: 'rgba(255, 0, 127, 0.25)',
+                            dark: '#C70063'
+                        },
+                        brl: '#00C853', // BRLj Stable Real Emerald
+                        btc: '#F7931A'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['Space Grotesk', 'monospace']
+                    },
+                    boxShadow: {
+                        'neon-cyan': '0 0 20px rgba(0, 191, 255, 0.35)',
+                        'neon-pink': '0 0 20px rgba(255, 0, 127, 0.35)',
+                        'neon-brl': '0 0 20px rgba(0, 200, 83, 0.35)',
+                        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        :root {
-            --midnight-carbon: #0F1115;
-            --neon-cyan: #00E5FF;
-            --glass-bg: rgba(15, 17, 21, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --text-main: #E2E8F0;
-            --text-muted: #64748B;
+        /* Custom Scrollbar & Utility Animations */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0F1115;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2A303C;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00BFFF;
         }
 
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: var(--midnight-carbon);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            color: var(--text-main);
-        }
-
-        #canvas-container {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-        }
-
-        /* UI Overlays com estilo Smoked Glass */
         .glass-panel {
-            background: var(--glass-bg);
+            background: rgba(26, 30, 38, 0.75);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            pointer-events: auto;
+            border: 1px solid rgba(42, 48, 60, 0.8);
         }
 
-        #ui-layer {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 24px;
+        .glass-panel-interactive {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-panel-interactive:hover {
+            border-color: rgba(0, 191, 255, 0.5);
+            box-shadow: 0 0 20px rgba(0, 191, 255, 0.15);
+            transform: translateY(-2px);
         }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+        .glow-text-cyan {
+            text-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+        }
+        .glow-text-pink {
+            text-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
         }
 
-        .title-box {
-            padding: 16px 24px;
-            max-width: 400px;
+        .screen-fade {
+            animation: fadeIn 0.35s ease-in-out forwards;
         }
 
-        .title-box h1 {
-            margin: 0 0 8px 0;
-            font-size: 14px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--neon-cyan);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
         }
 
-        .title-box p {
-            margin: 0;
-            font-size: 12px;
-            color: var(--text-muted);
-            line-height: 1.5;
+        /* Pulse Animations */
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.03); }
+        }
+        .pulse-element {
+            animation: pulseGlow 3s infinite ease-in-out;
         }
 
-        /* Painel de Inspeção Lateral */
-        .inspector-panel {
-            position: absolute;
-            right: 24px;
-            top: 24px;
-            width: 280px;
-            padding: 20px;
-            transform: translateX(120%);
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .inspector-panel.active {
-            transform: translateX(0);
-        }
-
-        .inspector-panel h2 {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            margin-top: 0;
-            border-bottom: 1px solid var(--glass-border);
-            padding-bottom: 8px;
-        }
-
-        .part-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #fff;
-            margin: 12px 0;
-            word-wrap: break-word;
-        }
-
-        .specs-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            font-size: 12px;
-        }
-
-        .specs-list li {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            color: var(--text-muted);
-        }
-
-        .specs-list span {
-            color: var(--neon-cyan);
-            font-family: monospace;
-        }
-
-        /* Controles Inferiores */
-        .controls-container {
-            align-self: center;
-            width: 100%;
-            max-width: 600px;
-            padding: 20px 32px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .control-group {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-        }
-
-        .control-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-            width: 140px;
-        }
-
-        input[type="range"] {
-            flex-grow: 1;
+        /* Range Slider Styling */
+        input[type=range] {
             -webkit-appearance: none;
             background: transparent;
-            height: 4px;
-            border-radius: 2px;
-            background: #2A2F3A;
+        }
+        input[type=range]:focus {
             outline: none;
         }
-
-        input[type="range"]::-webkit-slider-thumb {
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 10px;
+            cursor: pointer;
+            background: #222834;
+            border-radius: 5px;
+            border: 1px solid #2A303C;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #00BFFF;
+            cursor: pointer;
             -webkit-appearance: none;
-            height: 16px;
-            width: 16px;
-            border-radius: 50%;
-            background: var(--neon-cyan);
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+            margin-top: -7px;
+            box-shadow: 0 0 12px #00BFFF;
+            transition: transform 0.1s ease;
         }
-
-        .btn {
-            background: transparent;
-            border: 1px solid var(--neon-cyan);
-            color: var(--neon-cyan);
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.2s ease;
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
         }
-
-        .btn:hover, .btn.active {
-            background: var(--neon-cyan);
-            color: var(--midnight-carbon);
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
-        }
-
-        /* Loading Screen */
-        #loader {
-            position: fixed;
-            inset: 0;
-            background: var(--midnight-carbon);
-            z-index: 999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.5s ease;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 2px solid rgba(0, 229, 255, 0.2);
-            border-top-color: var(--neon-cyan);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 16px;
-        }
-
-        #loading-text {
-            font-size: 12px;
-            letter-spacing: 2px;
-            color: var(--neon-cyan);
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
+<body class="bg-carbon-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between selection:bg-cyan-neon selection:text-carbon-900 overflow-x-hidden">
 
-    <!-- Loading Screen -->
-    <div id="loader">
-        <div class="spinner"></div>
-        <div id="loading-text">INICIALIZANDO MOTOR 3D...</div>
-    </div>
+    <!-- Top Glow Background Decorative Effects -->
+    <div class="fixed top-0 left-1/4 w-96 h-96 bg-cyan-neon/10 rounded-full filter blur-[120px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-0 right-1/4 w-96 h-96 bg-pink-neon/10 rounded-full filter blur-[120px] pointer-events-none z-0"></div>
 
-    <!-- UI Overlay -->
-    <div id="ui-layer">
-        <div class="header">
-            <div class="glass-panel title-box">
-                <h1>2-Cylinder Engine</h1>
-                <p>Modelo Importado (.glb) • Iluminação HDRI PBR • Cinemática e Vista Explodida Calculada em Tempo Real.</p>
+    <!-- MAIN APP CONTAINER -->
+    <div id="app" class="relative z-10 w-full max-w-md md:max-w-4xl mx-auto min-h-screen flex flex-col justify-between p-4 md:p-6">
+        
+        <!-- HEADER / NAVIGATION (Visible when logged in) -->
+        <header id="main-header" class="hidden glass-panel rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-glass">
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-etc to-cyan-neon flex items-center justify-center text-carbon-900 font-bold shadow-neon-etc">
+                        <i class="fa-solid fa-cube text-xl text-carbon-900"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-mono font-bold text-lg leading-tight tracking-wider text-slate-100 flex items-center gap-2">
+                            SAT<span class="text-etc">ETC</span>
+                            <span class="text-[10px] bg-etc/10 border border-etc/30 text-etc px-2 py-0.5 rounded-full font-sans">EVM 100%</span>
+                        </h1>
+                        <p class="text-xs text-slate-400 font-mono flex items-center gap-1" id="header-user-wallet">
+        <!-- HEADER / NAVIGATION (Clean & Simplified) -->
+        <header id="main-header" class="hidden glass-panel rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-glass">
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brl to-cyan-neon flex items-center justify-center text-carbon-900 font-bold shadow-neon-brl">
+                        <i class="fa-solid fa-bolt text-xl text-carbon-900"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-mono font-bold text-lg leading-tight tracking-wider text-slate-100 flex items-center gap-2">
+                            SAT<span class="text-brl">POOL</span>
+                            <span class="text-[10px] bg-brl/10 border border-brl/30 text-brl px-2 py-0.5 rounded-full font-sans">Bipa ⚡</span>
+                        </h1>
+                        <p class="text-xs text-slate-400 font-mono flex items-center gap-1" id="header-user-wallet">
+                            <span class="w-2 h-2 rounded-full bg-brl animate-pulse"></span>
+                            <span id="header-cpf-display">CPF: ***.458.900-**</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Mode Switcher (Tomador vs Investidor) -->
+                <div class="flex bg-carbon-800 p-1 rounded-xl border border-carbon-600 font-mono text-[11px]">
+                    <button id="btn-mode-borrower" onclick="app.switchRole('borrower')" class="px-3 py-1 rounded-lg bg-cyan-neon text-carbon-900 font-bold transition-all">Tomador</button>
+                    <button id="btn-mode-lender" onclick="app.switchRole('lender')" class="px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all">Investidor</button>
+                </div>
             </div>
-            
-            <div class="glass-panel inspector-panel" id="inspector">
-                <h2>Inspeção de Peça</h2>
-                <div class="part-name" id="part-name">Nenhuma Selecionada</div>
-                <ul class="specs-list">
-                    <li>Material: <span id="part-mat">---</span></li>
-                    <li>Geometria: <span id="part-vert">---</span></li>
-                    <li>Tensão Operacional: <span>12V DC</span></li>
-                    <li>Status: <span>OK</span></li>
-                </ul>
+
+            <!-- Header Status & Action Buttons -->
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                <div id="header-level-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-neon/10 border border-cyan-neon/30 text-cyan-neon flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-shield-halved text-[10px]"></i>
+                    <span id="badge-level-name">Nível 1</span>
+                </div>
+
+                <button onclick="app.toggleArchModal()" class="w-9 h-9 rounded-xl bg-carbon-700 border border-carbon-500 flex items-center justify-center text-brl hover:border-brl transition-all" title="Como funciona a segurança">
+                    <i class="fa-solid fa-shield-cat text-xs"></i>
+                </button>
+
+                <button onclick="app.logout()" class="w-9 h-9 rounded-xl bg-carbon-700 border border-carbon-500 flex items-center justify-center text-slate-400 hover:text-pink-neon hover:border-pink-neon/40 transition-all" title="Sair da Conta">
+                    <i class="fa-solid fa-power-off text-xs"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- CONTENT AREA (Dynamic Screens) -->
+        <main id="screen-container" class="flex-grow flex flex-col justify-center">
+
+            <!-- ========================================== -->
+            <!-- TELA 1: ONBOARDING SIMPLIFICADO (CPF + SENHA) -->
+            <!-- ========================================== -->
+            <section id="screen-login" class="screen-fade w-full max-w-md mx-auto">
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-glass border border-carbon-500 relative overflow-hidden">
+                    <div class="absolute -top-12 -right-12 w-32 h-32 bg-brl/20 rounded-full blur-2xl pointer-events-none"></div>
+                    
+                    <!-- Branding Logo -->
+                    <div class="text-center mb-8">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-brl via-cyan-neon to-pink-neon p-0.5 shadow-neon-brl mb-3">
+                            <div class="w-full h-full bg-carbon-900 rounded-[14px] flex items-center justify-center">
+                                <i class="fa-solid fa-bolt text-3xl text-brl"></i>
+                            </div>
+                        </div>
+                        <h2 class="text-2xl font-bold font-mono tracking-tight text-slate-100">SATPOOL</h2>
+                        <p class="text-xs text-slate-400 mt-1">Empréstimos Instantâneos integrados ao seu app Bipa</p>
+                    </div>
+
+                    <!-- Clean Form Login -->
+                    <form id="form-login" onsubmit="app.handleSimpleLogin(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-1">
+                                <i class="fa-solid fa-id-card text-brl mr-1"></i> Seu CPF
+                            </label>
+                            <input type="text" id="input-cpf" required placeholder="000.000.000-00" value="123.456.789-00"
+                                   class="w-full bg-carbon-800/90 border border-carbon-500 rounded-xl px-4 py-3 text-slate-100 font-mono placeholder:text-slate-600 focus:outline-none focus:border-brl text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-1">
+                                <i class="fa-solid fa-lock text-cyan-neon mr-1"></i> Senha de 6 Dígitos
+                            </label>
+                            <input type="password" maxlength="6" required placeholder="• • • • • •" value="123456"
+                                   class="w-full bg-carbon-800/90 border border-carbon-500 rounded-xl px-4 py-3 text-slate-100 font-mono placeholder:text-slate-600 focus:outline-none focus:border-cyan-neon text-sm tracking-widest text-center">
+                        </div>
+
+                        <button type="submit" class="w-full py-4 rounded-xl bg-gradient-to-r from-brl to-emerald-600 text-carbon-900 font-bold font-mono text-sm tracking-wider uppercase shadow-neon-brl hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-arrow-right-to-bracket text-base"></i>
+                            <span>Entrar na Minha Conta</span>
+                        </button>
+                    </form>
+
+                    <!-- Features Tagline -->
+                    <div class="mt-6 pt-5 border-t border-carbon-600/60 grid grid-cols-3 gap-2 text-center text-[10px] text-slate-400 font-mono">
+                        <div><i class="fa-solid fa-shield-halved text-brl block text-xs mb-1"></i> Sem Burocracia</div>
+                        <div><i class="fa-solid fa-bolt text-btc block text-xs mb-1"></i> Receba na Bipa</div>
+                        <div><i class="fa-solid fa-lock text-cyan-neon block text-xs mb-1"></i> Garantia Protegida</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- TELA 1.5: ESCOLHA DE INTENÇÃO (LEIGO)     -->
+            <!-- ========================================== -->
+            <section id="screen-intent-choice" class="hidden screen-fade w-full max-w-lg mx-auto">
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-glass border border-carbon-500 text-center space-y-6">
+                    <div>
+                        <span class="text-xs font-mono text-brl uppercase tracking-widest block mb-1">Olá, bem-vindo</span>
+                        <h2 class="text-2xl font-bold font-mono text-slate-100">O que você deseja fazer hoje?</h2>
+                        <p class="text-xs text-slate-400 mt-1 font-mono">Escolha a opção desejada para continuar</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                        <!-- Borrower Option -->
+                        <div onclick="app.selectIntent('borrower')" class="glass-panel-interactive p-5 rounded-2xl bg-carbon-800/80 cursor-pointer border border-cyan-neon/30 hover:border-cyan-neon group">
+                            <div class="w-12 h-12 rounded-xl bg-cyan-neon/10 border border-cyan-neon/30 text-cyan-neon flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-hand-holding-dollar text-xl"></i>
+                            </div>
+                            <h3 class="font-bold font-mono text-slate-100 text-base mb-1 group-hover:text-cyan-neon transition-colors">Pegar Emprestado</h3>
+                            <p class="text-xs text-slate-400">Pegue Reais na hora e receba diretamente no seu aplicativo da Bipa.</p>
+                            <span class="inline-block mt-4 text-xs font-mono text-cyan-neon font-bold">Solicitar Crédito <i class="fa-solid fa-arrow-right ml-1"></i></span>
+                        </div>
+
+                        <!-- Lender Option -->
+                        <div onclick="app.selectIntent('lender')" class="glass-panel-interactive p-5 rounded-2xl bg-carbon-800/80 cursor-pointer border border-brl/30 hover:border-brl group">
+                            <div class="w-12 h-12 rounded-xl bg-brl/10 border border-brl/30 text-brl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-piggy-bank text-xl"></i>
+                            </div>
+                            <h3 class="font-bold font-mono text-slate-100 text-base mb-1 group-hover:text-brl transition-colors">Emprestar e Render</h3>
+                            <p class="text-xs text-slate-400">Deposite no fundo de empréstimos e receba rendimentos diários dos juros.</p>
+                            <span class="inline-block mt-4 text-xs font-mono text-brl font-bold">Ver Meu Fundo <i class="fa-solid fa-arrow-right ml-1"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- TELA 2: DASHBOARD HUB (TOMADOR)           -->
+            <!-- ========================================== -->
+            <section id="screen-dashboard" class="hidden screen-fade space-y-6">
+                <!-- HERO CARD: ESCADA DE CONQUISTAS -->
+                <div class="glass-panel rounded-3xl p-6 relative overflow-hidden shadow-glass border border-carbon-500">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-neon/10 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <span class="text-xs font-mono text-cyan-neon uppercase tracking-widest block mb-1">
+                                <i class="fa-solid fa-stairs mr-1"></i> Reputação em Smart Contract (ETC)
+                            </span>
+                            <h2 class="text-2xl font-bold font-mono text-slate-100 flex items-center gap-2">
+                                Escada de Conquistas 
+                                <span class="text-xs bg-cyan-neon/10 text-cyan-neon px-2.5 py-0.5 rounded-full border border-cyan-neon/30" id="dash-level-title">Nível 1 (Iniciante)</span>
+                            </h2>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar Component -->
+                    <div class="bg-carbon-800/90 rounded-2xl p-4 border border-carbon-600/80 mb-6 space-y-3">
+                        <div class="flex justify-between text-xs font-mono">
+                            <span class="text-slate-400">Empréstimos Quitados no Contrato</span>
+                            <span class="text-cyan-neon font-bold" id="dash-progress-text">0 / 2 Empréstimos</span>
+                        </div>
+                        <div class="w-full bg-carbon-900 rounded-full h-3 p-0.5 border border-carbon-600 relative overflow-hidden">
+                            <div id="dash-progress-bar" class="bg-gradient-to-r from-cyan-neon to-pink-neon h-full rounded-full transition-all duration-500 shadow-neon-cyan" style="width: 15%"></div>
+                        </div>
+                        <div class="flex justify-between text-[11px] font-mono text-slate-400 pt-1">
+                            <span>Taxa Atual: <strong class="text-pink-neon" id="dash-current-rate">30%</strong></span>
+                            <span>Próxima Taxa: <strong class="text-cyan-neon" id="dash-next-rate">25%</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Level Perks Grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-carbon-800/60 p-3 rounded-2xl border border-carbon-600/50">
+                            <span class="text-[10px] text-slate-400 font-mono block">Limite Disponível</span>
+                            <span class="text-lg font-bold font-mono text-slate-100" id="dash-limit-val">R$ 200,00</span>
+                        </div>
+                        <div class="bg-carbon-800/60 p-3 rounded-2xl border border-carbon-600/50">
+                            <span class="text-[10px] text-slate-400 font-mono block">Taxa de Juros</span>
+                            <span class="text-lg font-bold font-mono text-pink-neon" id="dash-rate-val">30.0%</span>
+                        </div>
+                        <div class="bg-carbon-800/60 p-3 rounded-2xl border border-carbon-600/50">
+                            <span class="text-[10px] text-slate-400 font-mono block">Exigência Colateral</span>
+                            <span class="text-lg font-bold font-mono text-cyan-neon" id="dash-collat-val">30% (R$ 60)</span>
+                        </div>
+                        <div class="bg-carbon-800/60 p-3 rounded-2xl border border-carbon-600/50">
+                            <span class="text-[10px] text-slate-400 font-mono block">Janela Tolerância</span>
+                            <span class="text-lg font-bold font-mono text-emerald-400">31 Dias</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBMARINE SWAP LN <-> BRL STABLE MONITOR CARD -->
+                <div class="glass-panel rounded-3xl p-5 border border-carbon-500 space-y-4">
+                    <div class="flex items-center justify-between border-b border-carbon-700 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-shield-check text-brl text-base"></i>
+                            <h3 class="font-mono text-xs font-bold text-slate-200 uppercase tracking-wider">Proteção de Garantia (Trava Estável 1:1 em Reais)</h3>
+                        </div>
+                        <span class="text-[10px] bg-brl/10 text-brl border border-brl/30 px-2 py-0.5 rounded-full font-mono">Protegido contra Volatilidade</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+                        <div class="bg-carbon-800/90 p-3 rounded-xl border border-carbon-600">
+                            <span class="text-[10px] text-slate-400 block mb-1">Garantia Enviada via Bipa</span>
+                            <span class="text-btc font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-bolt"></i> R$ 60,00 em Satoshis
+                            </span>
+                        </div>
+                        <div class="bg-carbon-800/90 p-3 rounded-xl border border-carbon-600 flex items-center justify-center text-center">
+                            <i class="fa-solid fa-lock text-brl text-lg animate-pulse"></i>
+                        </div>
+                        <div class="bg-carbon-800/90 p-3 rounded-xl border border-carbon-600">
+                            <span class="text-[10px] text-slate-400 block mb-1">Trava Estável (BRLj 1:1)</span>
+                            <span class="text-brl font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-vault"></i> R$ 60,00 Protegidos (31d)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ACTIVE LOAN CARD OR LOAN CTA -->
+                <div id="dash-loan-status-container"></div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- TELA INVESTIDOR (LENDER POOL DASHBOARD)   -->
+            <!-- ========================================== -->
+            <section id="screen-lender" class="hidden screen-fade space-y-6">
+                <!-- POOL LIQUIDITY HERO CARD -->
+                <div class="glass-panel rounded-3xl p-6 relative overflow-hidden shadow-glass border border-carbon-500">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-etc/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <span class="text-xs font-mono text-etc uppercase tracking-widest block mb-1">
+                                <i class="fa-solid fa-piggy-bank mr-1"></i> Pool de Liquidez Descentralizado (ETC)
+                            </span>
+                            <h2 class="text-2xl font-bold font-mono text-slate-100">Painel do Investidor</h2>
+                        </div>
+                        <button onclick="app.showDepositModal()" class="py-3 px-5 rounded-xl bg-gradient-to-r from-etc to-emerald-600 text-carbon-900 font-bold font-mono text-xs uppercase shadow-neon-etc hover:opacity-95 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-plus-circle"></i> Depositar no Pool
+                        </button>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-carbon-800/90 p-4 rounded-2xl border border-carbon-600">
+                            <span class="text-xs font-mono text-slate-400 block mb-1">Seu Saldo no Pool</span>
+                            <span class="text-2xl font-bold font-mono text-etc" id="lender-user-balance">15.50 ETC</span>
+                            <span class="text-xs font-mono text-slate-400 block mt-1">≈ R$ 1.788,70</span>
+                        </div>
+                        <div class="bg-carbon-800/90 p-4 rounded-2xl border border-carbon-600">
+                            <span class="text-xs font-mono text-slate-400 block mb-1">Rendimento Médio (APY)</span>
+                            <span class="text-2xl font-bold font-mono text-cyan-neon">24.5% a.a.</span>
+                            <span class="text-xs font-mono text-emerald-400 block mt-1">+ R$ 142,30 recebidos em juros</span>
+                        </div>
+                        <div class="bg-carbon-800/90 p-4 rounded-2xl border border-carbon-600">
+                            <span class="text-xs font-mono text-slate-400 block mb-1">Total no Pool Geral</span>
+                            <span class="text-2xl font-bold font-mono text-slate-100">240.80 ETC</span>
+                            <span class="text-xs font-mono text-slate-400 block mt-1">Garantia Ativa: 72.24 ETC</span>
+                        </div>
+                    </div>
+
+                    <!-- Deposit List History -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-mono font-bold text-slate-300 uppercase">Seus Rendimentos em Tempo Real</h4>
+                        <div class="bg-carbon-800/60 rounded-2xl border border-carbon-600/60 p-4 space-y-2">
+                            <div class="flex justify-between items-center text-xs font-mono border-b border-carbon-700/60 pb-2">
+                                <span class="text-slate-300"><i class="fa-solid fa-arrow-down-left text-etc mr-2"></i>Juros Pago p/ Empréstimo #89421</span>
+                                <span class="text-etc font-bold">+ 0.52 ETC (R$ 60,00)</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs font-mono">
+                                <span class="text-slate-300"><i class="fa-solid fa-arrow-down-left text-etc mr-2"></i>Juros Pago p/ Empréstimo #89302</span>
+                                <span class="text-etc font-bold">+ 0.71 ETC (R$ 82,00)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ARCHITECTURE & PWA MODAL -->
+        <div id="modal-architecture" class="hidden fixed inset-0 z-50 bg-carbon-900/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="glass-panel max-w-lg w-full p-6 rounded-3xl border border-carbon-500 space-y-5 relative shadow-glass">
+                <button onclick="app.toggleArchModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+        <!-- ARCHITECTURE & SECURITY MODAL -->
+        <div id="modal-architecture" class="hidden fixed inset-0 z-50 bg-carbon-900/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="glass-panel max-w-lg w-full p-6 rounded-3xl border border-carbon-500 space-y-5 relative shadow-glass">
+                <button onclick="app.toggleArchModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-brl/10 border border-brl/30 text-brl flex items-center justify-center">
+                        <i class="fa-solid fa-shield-cat text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold font-mono text-slate-100 text-base">Segurança & Proteção da Garantia</h3>
+                        <p class="text-xs text-slate-400 font-mono">Como o aplicativo protege o seu dinheiro</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3 text-xs font-mono text-slate-300">
+                    <div class="p-3 bg-carbon-800 rounded-xl border border-carbon-600 space-y-1">
+                        <strong class="text-brl block"><i class="fa-solid fa-vault mr-1"></i> Garantia Estável em Reais (BRLj 1:1)</strong>
+                        <p class="text-slate-400 text-[11px]">Sua garantia de 30% é convertida instantaneamente para um saldo estável indexado 1:1 ao Real. Se o Bitcoin subir ou cair durante os 31 dias, seus R$ 60,00 continuam valendo exatamente R$ 60,00.</p>
+                    </div>
+
+                    <div class="p-3 bg-carbon-800 rounded-xl border border-carbon-600 space-y-1">
+                        <strong class="text-cyan-neon block"><i class="fa-solid fa-bolt mr-1"></i> Liquidação Instantânea via Bipa</strong>
+                        <p class="text-slate-400 text-[11px]">Tanto o recebimento do empréstimo quanto a devolução da garantia ocorrem em segundos usando o app da Bipa sem burocracia bancária.</p>
+                    </div>
+                </div>
+
+                <button onclick="app.toggleArchModal()" class="w-full py-3 rounded-xl bg-carbon-700 text-slate-200 font-mono text-xs font-bold hover:bg-carbon-600 transition-all">
+                    Entendido
+                </button>
             </div>
         </div>
 
-        <div class="glass-panel controls-container">
-            <div class="control-group">
-                <span class="control-label">Vista Explodida</span>
-                <input type="range" id="explode-slider" min="0" max="2" step="0.01" value="0">
-            </div>
-            <div class="control-group" style="justify-content: flex-start; gap: 12px;">
-                <button class="btn" id="btn-xray">Modo Raio-X</button>
-                <button class="btn" id="btn-spin">Auto-Rotação</button>
-            </div>
-        </div>
+        <!-- FOOTER INFO -->
+        <footer class="mt-8 text-center text-xs text-slate-500 font-mono space-y-2 py-4 border-t border-carbon-800">
+            <p>SATPOOL ETC • Hospedado 100% no GitHub Pages via Smart Contracts EVM</p>
+            <p class="text-[10px] text-slate-600">Contrato Inteligente Testnet: <span class="font-mono text-etc">0x71C...39F2</span> (Ethereum Classic Chain ID: 61)</p>
+        </footer>
     </div>
 
-    <div id="canvas-container"></div>
-
-    <!-- Bibliotecas Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
-
+    <!-- JS Logic Scripts -->
     <script>
-        // 1. CONFIGURAÇÃO BASE
-        const container = document.getElementById('canvas-container');
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x0F1115, 0.002);
-
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.0;
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        container.appendChild(renderer.domElement);
-
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.maxDistance = 300;
-
-        // 2. ILUMINAÇÃO & AMBIENTE HDRI
-        // Carregando HDRI para reflexos realistas de metal
-        const pmremGenerator = new THREE.PMREMGenerator(renderer);
-        pmremGenerator.compileEquirectangularShader();
-
-        new THREE.RGBELoader()
-            .setDataType(THREE.UnsignedByteType)
-            .load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/equirectangular/royal_esplanade_1k.hdr', function (texture) {
-                const envMap = pmremGenerator.fromEquirectangular(texture).texture;
-                scene.environment = envMap;
-                texture.dispose();
-                pmremGenerator.dispose();
-            });
-
-        // Luzes direcionais de suporte para contraste
-        const dirLight = new THREE.DirectionalLight(0xffffff, 2);
-        dirLight.position.set(10, 20, 10);
-        scene.add(dirLight);
-
-        const backLight = new THREE.DirectionalLight(0x00E5FF, 1.5);
-        backLight.position.set(-10, -20, -10);
-        scene.add(backLight);
-
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-        scene.add(ambientLight);
-
-        // 3. IMPORTAÇÃO DO MODELO GLB (Khronos 2-Cylinder Engine)
-        const loader = new THREE.GLTFLoader();
-        const modelUrl = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/2CylinderEngine/glTF-Binary/2CylinderEngine.glb';
-        
-        let engineModel, engineParts = [];
-        let isXray = false;
-        let autoRotate = false;
-        const xrayMaterial = new THREE.MeshBasicMaterial({ color: 0x00E5FF, wireframe: true, transparent: true, opacity: 0.15 });
-        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x00E5FF, emissiveIntensity: 0.8, roughness: 0.2, metalness: 0.8 });
-
-        const loadingText = document.getElementById('loading-text');
-
-        loader.load(
-            modelUrl,
-            (gltf) => {
-                engineModel = gltf.scene;
-                
-                // Centralizar e escalar modelo dinamicamente
-                const box = new THREE.Box3().setFromObject(engineModel);
-                const center = box.getCenter(new THREE.Vector3());
-                const size = box.getSize(new THREE.Vector3());
-                const maxDim = Math.max(size.x, size.y, size.z);
-                
-                const targetSize = 50; // Tamanho ideal para visualização
-                const scale = targetSize / maxDim;
-                engineModel.scale.set(scale, scale, scale);
-                
-                engineModel.position.sub(center.multiplyScalar(scale)); // Centraliza no mundo
-                scene.add(engineModel);
-
-                camera.position.set(targetSize, targetSize * 0.8, targetSize * 1.5);
-                controls.target.set(0, 0, 0);
-
-                // Processar peças para Vista Explodida e Salvar Materiais
-                engineModel.traverse((child) => {
-                    if (child.isMesh) {
-                        engineParts.push(child);
-                        
-                        // Salvar material original para toggle
-                        child.userData.originalMaterial = child.material;
-                        
-                        // Calcular vetor de explosão a partir do centro da peça até o centro do modelo
-                        child.geometry.computeBoundingBox();
-                        const partCenter = new THREE.Vector3();
-                        child.geometry.boundingBox.getCenter(partCenter);
-                        partCenter.multiplyScalar(scale); // Aplica a mesma escala
-                        
-                        // Adiciona a posição do nó pai para pegar o world position aproximado
-                        partCenter.add(child.position.clone().multiplyScalar(scale));
-
-                        child.userData.originalPosition = child.position.clone();
-                        // O vetor de explosão é a direção do centro (0,0,0) para a peça
-                        child.userData.explodeVector = partCenter.clone().normalize().multiplyScalar(targetSize * 0.8);
-                    }
-                });
-
-                // Ocultar Loader
-                const loaderEl = document.getElementById('loader');
-                loaderEl.style.opacity = '0';
-                setTimeout(() => loaderEl.style.display = 'none', 500);
-            },
-            (xhr) => {
-                const percent = Math.round((xhr.loaded / xhr.total) * 100);
-                loadingText.innerText = `BAIXANDO GEOMETRIA: ${percent || 0}%`;
-            },
-            (error) => {
-                console.error('Erro ao carregar GLB:', error);
-                loadingText.innerText = 'ERRO AO CARREGAR MODELO. VERIFIQUE CONEXÃO.';
-                loadingText.style.color = '#ff0055';
+        class App {
+            constructor() {
+                this.state = {
+                    userCpf: null,
+                    role: 'borrower', // borrower | lender
+                    activeLoan: null,
+                    userLevel: 1,
+                    completedLoans: 0
+                };
             }
-        );
 
-        // 4. LÓGICA DE INTERAÇÃO (Raycasting & Vista Explodida)
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        let selectedObject = null;
-        const inspectorPanel = document.getElementById('inspector');
-
-        window.addEventListener('click', (event) => {
-            // Ignorar cliques na UI
-            if(event.target.tagName === 'INPUT' || event.target.tagName === 'BUTTON') return;
-
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            if (!engineModel) return;
-
-            const intersects = raycaster.intersectObject(engineModel, true);
-
-            if (intersects.length > 0) {
-                // Restaurar anterior
-                if (selectedObject && !isXray) {
-                    selectedObject.material = selectedObject.userData.originalMaterial;
-                }
-
-                selectedObject = intersects[0].object;
-                
-                // Aplicar Highlight
-                if (!isXray) {
-                    selectedObject.material = highlightMaterial;
-                }
-
-                // Atualizar UI
-                document.getElementById('part-name').innerText = selectedObject.name || 'Componente Genérico';
-                document.getElementById('part-mat').innerText = selectedObject.userData.originalMaterial.name || 'PBR Metal';
-                document.getElementById('part-vert').innerText = `${selectedObject.geometry.attributes.position.count} Vertices`;
-                
-                inspectorPanel.classList.add('active');
-            } else {
-                // Desmarcar
-                if (selectedObject && !isXray) {
-                    selectedObject.material = selectedObject.userData.originalMaterial;
-                }
-                selectedObject = null;
-                inspectorPanel.classList.remove('active');
+            init() {
+                console.log("SatPool Bipa Clean UX Inicializado!");
             }
-        });
 
-        // Controles de UI
-        const explodeSlider = document.getElementById('explode-slider');
-        explodeSlider.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value);
-            engineParts.forEach(part => {
-                const start = part.userData.originalPosition;
-                const offset = part.userData.explodeVector.clone().multiplyScalar(val);
-                part.position.copy(start).add(offset);
-            });
-        });
+            toggleArchModal() {
+                const modal = document.getElementById('modal-architecture');
+                if (modal) modal.classList.toggle('hidden');
+            }
 
-        document.getElementById('btn-xray').addEventListener('click', (e) => {
-            isXray = !isXray;
-            e.target.classList.toggle('active');
-            
-            engineParts.forEach(part => {
-                if (isXray) {
-                    part.material = xrayMaterial;
+            handleSimpleLogin(e) {
+                if (e && e.preventDefault) e.preventDefault();
+                const cpfInput = document.getElementById('input-cpf').value;
+                this.state.userCpf = cpfInput;
+                document.getElementById('header-cpf-display').textContent = `CPF: ${cpfInput.substring(0,3)}.***.***-${cpfInput.substring(cpfInput.length-2)}`;
+                this.showIntentScreen();
+            }
+
+            showIntentScreen() {
+                document.getElementById('screen-login').classList.add('hidden');
+                document.getElementById('screen-intent-choice').classList.remove('hidden');
+                document.getElementById('main-header').classList.remove('hidden');
+            }
+
+            selectIntent(role) {
+                this.state.role = role;
+                document.getElementById('screen-intent-choice').classList.add('hidden');
+                
+                if (role === 'borrower') {
+                    this.navigateTo('screen-dashboard');
                 } else {
-                    part.material = part === selectedObject ? highlightMaterial : part.userData.originalMaterial;
+                    this.navigateTo('screen-lender');
                 }
-            });
-        });
+                this.updateHeaderUI();
+            }
 
-        document.getElementById('btn-spin').addEventListener('click', (e) => {
-            autoRotate = !autoRotate;
-            e.target.classList.toggle('active');
-            controls.autoRotate = autoRotate;
-            controls.autoRotateSpeed = 2.0;
-        });
+            switchRole(role) {
+                this.selectIntent(role);
+            }
 
-        // 5. LOOP DE ANIMAÇÃO E RESIZE
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+            updateHeaderUI() {
+                const btnBorrower = document.getElementById('btn-mode-borrower');
+                const btnLender = document.getElementById('btn-mode-lender');
+                
+                if (this.state.role === 'borrower') {
+                    btnBorrower.className = "px-3 py-1 rounded-lg bg-cyan-neon text-carbon-900 font-bold transition-all";
+                    btnLender.className = "px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all";
+                } else {
+                    btnLender.className = "px-3 py-1 rounded-lg bg-brl text-carbon-900 font-bold transition-all";
+                    btnBorrower.className = "px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all";
+                }
+            }
 
-        const clock = new THREE.Clock();
+            navigateTo(screenId) {
+                const screens = ['screen-login', 'screen-intent-choice', 'screen-dashboard', 'screen-lender'];
+                screens.forEach(s => {
+                    const el = document.getElementById(s);
+                    if (el) el.classList.add('hidden');
+                });
+                const target = document.getElementById(screenId);
+                if (target) target.classList.remove('hidden');
+            }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
+            logout() {
+                this.state.userCpf = null;
+                document.getElementById('main-header').classList.add('hidden');
+                this.navigateTo('screen-login');
+            }
+
+            showDepositModal() {
+                alert("Para investir no fundo: Pague a Invoice Lightning com o valor em Satoshis usando seu app Bipa e seu rendimento começará a contar na hora!");
+            }
         }
 
-        animate();
+        const app = new App();
+        window.onload = () => app.init();
     </script>
 </body>
 </html>
